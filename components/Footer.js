@@ -1,16 +1,17 @@
-import React from 'react'
 import { Layout } from 'antd';
-const Footerv = () => {
-    const { Header, Sider, Content, Footer } = Layout;
+import React from 'react';
+
+const Footer = () => {
+    const { Footer } = Layout;
     return (
         <Footer
             style={{
                 textAlign: 'center',
             }}
         >
-            Ant Design ©2023 Created by Ant UED
+            Infisis Design ©2023 Created by DEV TEAMS
         </Footer>
     )
 }
 
-export default Footerv;
+export default Footer

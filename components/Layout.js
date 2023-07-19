@@ -1,7 +1,7 @@
+import { Layout } from 'antd';
 import React, { useState } from 'react';
-import { theme,Layout } from 'antd';
-import Leftsidebar from '../components/LeftSidebar';
 import Footer from '../components/Footer';
+import Leftsidebar from '../components/LeftSidebar';
 import Navbar from '../components/NavBar';
 // import CustomContent from './Content';
 
