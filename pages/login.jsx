@@ -28,7 +28,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (token) {
-      router.replace('/home');
+      router.replace('/');
     }
   }, [token])
 
