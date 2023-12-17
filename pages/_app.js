@@ -7,6 +7,7 @@ import { Slide, ToastContainer } from "react-toastify";
 import LogIn from './login';
 import { useEffect, useState } from 'react';
 import Loader from '../components/common/Loader';
+import {  QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const MyApp = ({ Component, pageProps }) => {
   const [loading, setLoading] = useState(true);
@@ -15,9 +16,7 @@ const MyApp = ({ Component, pageProps }) => {
     setTimeout(() => setLoading(false), 1000);
   }, []);
 
-  // let user = {
-  //   "name": "user1"
-  // }
+  const [queryClient] = useState(() => new QueryClient());
 
   const { http, user, token, logout } = Axios();
   // console.log("user", user);
@@ -31,7 +30,7 @@ const MyApp = ({ Component, pageProps }) => {
             <Loader />
           ) : (
             <>
-            
+
               <LogIn />
 
               <ToastContainer
@@ -60,18 +59,22 @@ const MyApp = ({ Component, pageProps }) => {
       ) : (
         <>
           <Layout>
-            <Component {...pageProps} />
-            <ToastContainer
-              position="top-right"
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              draggable={false}
-              closeOnClick
-              pauseOnHover
-              transition={Slide}
-            />
 
+            <QueryClientProvider client={queryClient}>
+              
+                <Component {...pageProps} />
+                <ToastContainer
+                  position="top-right"
+                  autoClose={3000}
+                  hideProgressBar={false}
+                  newestOnTop={false}
+                  draggable={false}
+                  closeOnClick
+                  pauseOnHover
+                  transition={Slide}
+                />
+            
+            </QueryClientProvider>
 
           </Layout>
 
