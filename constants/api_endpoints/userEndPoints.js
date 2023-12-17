@@ -5,4 +5,5 @@ export const USER_END_POINT = {
     info: (id) => `/user/${id}`,
     update: (id) => `/user/${id}`,
     delete:(id) => `/user/${id}`,
+    changePassword:()=>`/user/changepassword`,
 }   
