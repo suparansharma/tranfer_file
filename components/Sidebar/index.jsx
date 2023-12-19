@@ -307,11 +307,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                           </li>
                           <li>
                             <Link
-                              href="/forms/form-layout"
+                              href="/subjectsDark"
                               className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ${pathname ===
                                 "/forms/form-layout" && "text-white"}`}
                             >
-                              Class
+                              subjectsDark
                             </Link>
                           </li>
                         </ul>

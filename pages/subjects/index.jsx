@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { Row, Table, Tag } from 'antd';
 import Link from "next/link";
+import SubjectForm from './SubjectForm';
 const Subjects = () => {
 
     /*** Storing data start */
@@ -16,6 +17,10 @@ const Subjects = () => {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const [perPage, setPerPage] = useState(10);
+
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     /*** Storing data end */
 
 
@@ -111,6 +116,13 @@ const Subjects = () => {
     };
 
 
+
+
+    const toggleModal = () => {
+        console.log("clicked");
+        setIsModalOpen(!isModalOpen);
+      };
+
     return (
         <div className="flex flex-col gap-10">
             <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -121,13 +133,17 @@ const Subjects = () => {
                     <button
                         href="#"
                         className="inline-flex items-center justify-center rounded-full bg-primary py-2 px-5 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
+                        onClick={toggleModal}
                     >
                         Add
                         <span className="button-icon-space ml-5">
-                            <FontAwesomeIcon icon={faPlusCircle} />
+                            <FontAwesomeIcon icon={faPlusCircle}  />
                         </span>
                     </button>
                 </div>
+
+                <SubjectForm isModalOpen={isModalOpen} toggleModal={toggleModal} setIsModalOpen={setIsModalOpen} />
+
 
                 <Table
                     className="border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark text-black dark:text-white"
