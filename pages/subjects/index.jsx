@@ -10,6 +10,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Row, Table, Tag } from 'antd';
 import Link from "next/link";
 import SubjectForm from './SubjectForm';
+
+
 const Subjects = () => {
 
     /*** Storing data start */
@@ -17,13 +19,35 @@ const Subjects = () => {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const [perPage, setPerPage] = useState(10);
-
-
+    const [editData, setEditData] = useState({});
     const [isModalOpen, setIsModalOpen] = useState(false);
-
     /*** Storing data end */
 
 
+
+    /**Function start */
+
+    /**Subject Add start */
+    const handleAdd = () => {
+        setIsModalOpen(true);
+        setEditData(null);
+    };
+
+    /**Subject Add end */
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
+
+    /**Function end */
+
+
+    /**Subject edit start */
+    const handleEdit = (data) => {
+        setEditData(data);
+        setIsModalOpen(true);
+    }
+    /**Subject edit end */
 
 
     /*** Fetch All Subject List Start  */
@@ -35,6 +59,8 @@ const Subjects = () => {
     } = useGetAllData(QUERY_KEYS.GET_ALL_SUBJECT_LIST, SUBJECT_END_POINT.get(page, limit, search, ""));
 
     /*** Fetch All Subject List end  */
+
+
 
 
 
@@ -103,7 +129,7 @@ const Subjects = () => {
                         <EyeOutlined style={{ fontSize: '22px' }} />
                     </a>
 
-                    <a onClick={() => handleOpen(row)} className="text-primary" >
+                    <a onClick={() => handleEdit(row)} className="text-primary" >
                         <EditOutlined style={{ fontSize: '22px' }} />
                     </a>
 
@@ -121,7 +147,7 @@ const Subjects = () => {
     const toggleModal = () => {
         console.log("clicked");
         setIsModalOpen(!isModalOpen);
-      };
+    };
 
     return (
         <div className="flex flex-col gap-10">
@@ -133,16 +159,16 @@ const Subjects = () => {
                     <button
                         href="#"
                         className="inline-flex items-center justify-center rounded-full bg-primary py-2 px-5 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
-                        onClick={toggleModal}
+                        onClick={handleAdd}
                     >
                         Add
                         <span className="button-icon-space ml-5">
-                            <FontAwesomeIcon icon={faPlusCircle}  />
+                            <FontAwesomeIcon icon={faPlusCircle} />
                         </span>
                     </button>
                 </div>
 
-                <SubjectForm isModalOpen={isModalOpen} toggleModal={toggleModal} setIsModalOpen={setIsModalOpen} />
+                <SubjectForm isOpen={isModalOpen} onClose={closeModal} setEditData={editData} />
 
 
                 <Table
