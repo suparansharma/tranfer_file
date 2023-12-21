@@ -11,10 +11,12 @@ import Link from "next/link";
 import SubjectForm from './SubjectForm';
 import { del } from '@/helpers/api_helper';
 import ToastMessage from '@/components/Toast';
+import DebouncedSearchInput from '@/components/elements/DebouncedSearchInput';
 
 
 const DeleteModal = ({ isOpen, onClose, data, isParentRender }) => {
     const [loading, setLoading] = useState(false);
+
     const notify = useCallback((type, message) => {
         ToastMessage({ type, message });
     }, []);
@@ -246,14 +248,10 @@ const Subjects = () => {
                     </button>
                 </div>
 
-                {/* Input field on the right side */}
+
+
                 <div className="p-4 md:p-6 xl:p-7.5 flex justify-end">
-                    <input
-                        type="text"
-                        placeholder="Search subjects..."
-                        className="border border-gray-300 rounded-md p-2 text-sm"
-                    // onChange={handleSearch}
-                    />
+                    <DebouncedSearchInput setSearch={setSearch} />
                 </div>
 
 
