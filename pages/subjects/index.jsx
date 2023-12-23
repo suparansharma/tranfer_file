@@ -91,11 +91,15 @@ const Subjects = () => {
 
     /**Subject Add end */
 
+
     const closeModal = () => {
         setIsModalOpen(false);
     };
 
     /**Function end */
+
+
+
 
 
     /**Subject edit start */
@@ -104,6 +108,9 @@ const Subjects = () => {
         setIsModalOpen(true);
     }
     /**Subject edit end */
+
+    
+
 
 
     /**Subject Delete start */
