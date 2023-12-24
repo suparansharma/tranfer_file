@@ -1,34 +1,133 @@
 import ToastMessage from '@/components/Toast';
+import AnimatedMulti from '@/components/elements/AnimatedMulti';
+import { CLASS_END_POINT, SUBJECT_END_POINT } from '@/constants';
+import { QUERY_KEYS } from '@/constants/queryKeys';
 import { post, put } from '@/helpers/api_helper';
-import React, { useCallback, useEffect, useState } from 'react'
+import { mapArrayToDropdown } from '@/helpers/common_Helper';
+import { useGetAllData } from '@/utils/hooks/useGetAllData';
+import React, { useCallback, useEffect, useState } from 'react';
+import Select from 'react-select';
+
 
 const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
 
     const [classInfo, setClassInfo] = useState({
-        name: '', subject: '', status: ''
+        name: '',
+        subject: [],
+        status: ''
     });
+  
+
+
     const [loading, setLoading] = useState(false);
 
     const notify = useCallback((type, message) => {
         ToastMessage({ type, message });
     }, []);
 
+    const [subjects, setSubjects] = useState([]);
+console.log("subjects",subjects);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setClassInfo((prev) => ({
-            ...prev,
-            [name]: value,
+
+
+
+    useEffect(() => {
+        if (setEditData === null) {
+            setClassInfo({ name: '', status: '' });
+        } else {
+            setClassInfo({
+                name: setEditData.name || '',
+                status: setEditData.status || '',
+                // subject: setEditData?.subject?.map((t) => ({
+                //   id: t.subjectId?._id,
+                //   value: t?.subjectId?.name,
+                // })) || [],
+                subject: setEditData?.subject?.map((t) => t.subjectId)?.map((t) => t?._id),
+              });
+            
+        }
+    }, [setEditData?._id, setEditData]);
+
+
+    // const { data : ClassDetails, isError, isLoading: classDetailsLoading } = useGetAllData(
+    //     QUERY_KEYS.GET_JOB_DETAILS,
+    //     CLASS_END_POINT.info(setEditData?._id)
+    //   );
+    //   console.log("ClassDetails",ClassDetails?.data);
+
+
+    /**fetch subject list */
+    const {
+        data: subjectList,
+        isLoading,
+        refetch: fetchSubjectList,
+    } = useGetAllData(
+        QUERY_KEYS.GET_ALL_SUBJECT_LIST,
+        SUBJECT_END_POINT.get(1, -1, '', status)
+    );
+
+    /**subject dropdown */
+    useEffect(() => {
+        const SUBJECTDROPDOWN = mapArrayToDropdown(
+            subjectList?.data,
+            'name',
+            '_id'
+        );
+
+        const allSubj = SUBJECTDROPDOWN?.map((item) => ({
+            id: item?._id,
+            value: item?.name,
         }));
+        setSubjects(allSubj);
+    }, [subjectList]);
+
+
+    /**fetch subject list  End */
+
+
+
+    console.log("classInfo", classInfo);    
+    const handleChange = (e, selectedOptions) => {
+        const { name, value } = e.target;
+
+        // Handle different input fields
+        if (name === 'status' && e.target.type === 'select-one') {
+            // Handle select input
+            setClassInfo((prev) => ({
+                ...prev,
+                [name]: value === 'true' || value === true, // Convert the value to boolean
+            }));
+        } else if (name === 'name') {
+            // Handle text input
+            setClassInfo((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        } else if (name === 'subject') {
+            const subjectIds = selectedOptions.map((option) => option.value);
+
+            setClassInfo((prev) => ({
+                ...prev,
+                subject: subjectIds,
+            }));
+        }
     };
 
 
-    
+
+
+
+
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        console.log("classInfo", classInfo);
     }
 
+    // const subjectIds = classInfo.subject.map((subject) => subject.id);
+
+    // console.log(subjectIds);
     return (
         <>
             {isOpen && (
@@ -39,7 +138,7 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                             {/* Modal content */}
                             <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    {setEditData?._id ? "Update Subject" : "Create New Subject"}
+                                    {setEditData?._id ? "Update Class" : "Create New Class"}
                                 </h3>
                                 <button
                                     onClick={() => {
@@ -90,6 +189,23 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                         />
                                     </div>
 
+
+                                    <div className="col-span-2">
+                                        <label
+                                            htmlFor="subject"
+                                            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                                        >
+                                            Subject
+                                        </label>
+                                        <AnimatedMulti
+  options={subjects}
+  labelKey="value"
+  valueKey="id"
+  onChange={(selectedOptions) => handleChange({ target: { name: 'subject' } }, selectedOptions)}
+  selectedValues={classInfo?.subject}
+/>
+                                    </div>
+
                                     <div className="col-span-2">
                                         <label
                                             htmlFor="status"
@@ -111,6 +227,8 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                         </select>
                                     </div>
 
+
+
                                 </div>
                                 <div className="ml-auto">
                                     <button
@@ -129,7 +247,7 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                                 clipRule="evenodd"
                                             />
                                         </svg>
-                                        {setEditData?._id ? "Update Subject" : "Create New Subject"}
+                                        {setEditData?._id ? "Update Class" : "Create New Class"}
 
                                         {/* Add new Subject */}
                                     </button>

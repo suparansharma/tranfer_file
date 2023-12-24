@@ -30,6 +30,15 @@ const Classes = () => {
     setEditData(null);
   };
   /**Class Add end */
+
+  
+
+  /**Class edit start */
+  const handleEdit = (data) => {
+    setEditData(data);
+    setIsModalOpen(true);
+}
+/**Class edit end */
   
 
   /**Modal close Function  Start*/
