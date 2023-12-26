@@ -16,7 +16,7 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
         subject: [],
         status: ''
     });
-  
+
 
 
     const [loading, setLoading] = useState(false);
@@ -26,10 +26,6 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
     }, []);
 
     const [subjects, setSubjects] = useState([]);
-console.log("subjects",subjects);
-
-
-
 
     useEffect(() => {
         if (setEditData === null) {
@@ -38,22 +34,13 @@ console.log("subjects",subjects);
             setClassInfo({
                 name: setEditData.name || '',
                 status: setEditData.status || '',
-                // subject: setEditData?.subject?.map((t) => ({
-                //   id: t.subjectId?._id,
-                //   value: t?.subjectId?.name,
-                // })) || [],
                 subject: setEditData?.subject?.map((t) => t.subjectId)?.map((t) => t?._id),
-              });
-            
+            });
+
         }
     }, [setEditData?._id, setEditData]);
 
 
-    // const { data : ClassDetails, isError, isLoading: classDetailsLoading } = useGetAllData(
-    //     QUERY_KEYS.GET_JOB_DETAILS,
-    //     CLASS_END_POINT.info(setEditData?._id)
-    //   );
-    //   console.log("ClassDetails",ClassDetails?.data);
 
 
     /**fetch subject list */
@@ -86,7 +73,7 @@ console.log("subjects",subjects);
 
 
 
-    console.log("classInfo", classInfo);    
+    console.log("classInfo", classInfo);
     const handleChange = (e, selectedOptions) => {
         const { name, value } = e.target;
 
@@ -113,21 +100,133 @@ console.log("subjects",subjects);
         }
     };
 
+    // const handleChange = (e, selectedOptions) => {
+    //     const { name, value } = e.target;
+    
+    //     // Handle different input fields
+    //     if (name === 'status' && e.target.type === 'select-one') {
+    //         // Handle select input
+    //         setClassInfo((prev) => ({
+    //             ...prev,
+    //             [name]: value === 'true' || value === true,
+    //         }));
+    //     } else if (name === 'name') {
+    //         // Handle text input
+    //         setClassInfo((prev) => ({
+    //             ...prev,
+    //             [name]: value,
+    //         }));
+    //     } else if (name === 'subject') {
+    //         const subjectIds = selectedOptions.map((option) => ({
+    //             subjectId: option.value,
+    //         }));
+    
+    //         setClassInfo((prev) => ({
+    //             ...prev,
+    //             subject: subjectIds,
+    //         }));
+    //     }
+    // };
+    
 
 
 
 
 
+
+
+    console.log("classInfo", classInfo);
+
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault();
+    //     // Add your form submission logic here
+    //     setLoading(true);
+    //     if (setEditData?._id) {
+    //       try {
+    //         const update = await put(CLASS_END_POINT.update(setEditData._id), classInfo);
+    //         if (update.status == 'SUCCESS') {
+    //           notify('success', update.message);
+    //           if (isParentRender) {
+    //             isParentRender(true);
+    //           }
+    //           onClose();
+    //         }
+    //       } catch (error) {
+    //         notify('error', update.errorMessage);
+    //         setLoading(false);
+    //       }
+    //     } else {
+    //       try {
+    //         const response = await post(CLASS_END_POINT.create(), classInfo);
+    //         if (response.status === 'SUCCESS') {
+    //           notify('success', response.message);
+    //           if (isParentRender) {
+    //             isParentRender(true);
+    //           }
+    //           onClose();
+    //         } else {
+    //           notify('error', response.errorMessage);
+    //           setLoading(false);
+    //         }
+    //       } catch (error) {
+    //         console.log(error)
+    //         notify('error', error.message);
+    //         setLoading(false);
+    //       }
+    
+    //       // setLoading(false);
+    
+    //     }
+    
+    //     onClose();
+    //     setLoading(false);
+    //   };
 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("classInfo", classInfo);
-    }
+        setLoading(true);
+      
+        try {
+          const formattedClassInfo = {
+            name: classInfo.name,
+            status: classInfo.status,
+            subject: classInfo.subject.map((subjectId) => ({ subjectId })),
+          };
+      
+          if (setEditData?._id) {
+            const update = await put(CLASS_END_POINT.update(setEditData._id), formattedClassInfo);
+            if (update.status === 'SUCCESS') {
+              notify('success', update.message);
+              if (isParentRender) {
+                isParentRender(true);
+              }
+              onClose();
+            } else {
+              notify('error', update.errorMessage);
+            }
+          } else {
+            const response = await post(CLASS_END_POINT.create(), formattedClassInfo);
+            if (response.status === 'SUCCESS') {
+              notify('success', response.message);
+              if (isParentRender) {
+                isParentRender(true);
+              }
+              onClose();
+            } else {
+              notify('error', response.errorMessage);
+            }
+          }
+        } catch (error) {
+          console.error(error);
+          notify('error', error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
 
-    // const subjectIds = classInfo.subject.map((subject) => subject.id);
 
-    // console.log(subjectIds);
     return (
         <>
             {isOpen && (
@@ -198,12 +297,12 @@ console.log("subjects",subjects);
                                             Subject
                                         </label>
                                         <AnimatedMulti
-  options={subjects}
-  labelKey="value"
-  valueKey="id"
-  onChange={(selectedOptions) => handleChange({ target: { name: 'subject' } }, selectedOptions)}
-  selectedValues={classInfo?.subject}
-/>
+                                            options={subjects}
+                                            labelKey="value"
+                                            valueKey="id"
+                                            onChange={(selectedOptions) => handleChange({ target: { name: 'subject' } }, selectedOptions)}
+                                            selectedValues={classInfo?.subject}
+                                        />
                                     </div>
 
                                     <div className="col-span-2">
