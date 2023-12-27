@@ -1,18 +1,16 @@
-import { CLASS_END_POINT } from '@/constants';
+import { CATEGORIE_END_POINT } from '@/constants';
 import { QUERY_KEYS } from '@/constants/queryKeys';
 import { useGetAllData } from '@/utils/hooks/useGetAllData';
+import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import { useCallback, useState } from 'react';
-import { Row, Table, Tag } from 'antd';
 import { faPlusCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Row, Table, Tag } from 'antd';
 import Link from "next/link";
+import { del } from '@/helpers/api_helper';
 import ToastMessage from '@/components/Toast';
 import DebouncedSearchInput from '@/components/elements/DebouncedSearchInput';
-import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
-import ClassForm from './ClassForm';
-import { del } from '@/helpers/api_helper';
-
-
+import CategoryForm from './categoryForm';
 
 
 const DeleteModal = ({ isOpen, onClose, data, isParentRender }) => {
@@ -23,16 +21,16 @@ const DeleteModal = ({ isOpen, onClose, data, isParentRender }) => {
   }, []);
   const deleteData = async () => {
     try {
-      const deleteClass = await del(CLASS_END_POINT.delete(data?._id));
-      if (deleteClass.status == 'SUCCESS') {
-        notify('success', deleteClass.message);
+      const deleteSubject = await del(CATEGORIE_END_POINT.delete(data?._id));
+      if (deleteSubject.status == 'SUCCESS') {
+        notify('success', deleteSubject.message);
         if (isParentRender) {
           isParentRender(true);
         }
         onClose();
       }
     } catch (error) {
-      notify('error', deleteClass.errorMessage);
+      notify('error', deleteSubject.errorMessage);
       setLoading(false);
     }
 
@@ -51,7 +49,7 @@ const DeleteModal = ({ isOpen, onClose, data, isParentRender }) => {
                   <span class="sr-only">Close modal</span>
                 </button>
                 <svg class="text-gray-400 dark:text-gray-500 w-11 h-11 mb-3.5 mx-auto" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
-                <p class="mb-4 text-gray-500 dark:text-gray-300">Are you sure you want to delete this class?</p>
+                <p class="mb-4 text-gray-500 dark:text-gray-300">Are you sure you want to Delete the category?</p>
                 <div class="flex justify-center items-center space-x-4">
                   <button onClick={onClose} data-modal-toggle="deleteModal" type="button" class="py-2 px-3 text-sm font-medium text-gray-500 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-primary-300 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">
                     No, cancel
@@ -73,7 +71,10 @@ const DeleteModal = ({ isOpen, onClose, data, isParentRender }) => {
 
 
 
-const Classes = () => {
+
+
+
+const Categories = () => {
 
   /*** Storing data start */
   const [search, setSearch] = useState('');
@@ -86,32 +87,37 @@ const Classes = () => {
   /*** Storing data end */
 
 
-  /**Class Add start */
+
+  /**Category Add start */
   const handleAdd = () => {
     setIsModalOpen(true);
     setEditData(null);
   };
-  /**Class Add end */
+
+  /**Category Add end */
+
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  /**Function end */
 
 
 
-  /**Class edit start */
+
+
+  /**Category edit start */
   const handleEdit = (data) => {
     setEditData(data);
     setIsModalOpen(true);
   }
-  /**Class edit end */
-
-
-  /**Modal close Function  Start*/
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
-  /**Modal close Function  End*/
+  /**Category edit end */
 
 
 
-  /** Delete start */
+
+  /**Category Delete start */
   const handleDelete = (data) => {
     setEditData(data);
     setDeleteIsModalOpen(true);
@@ -119,30 +125,64 @@ const Classes = () => {
   const closeDeleteModal = () => {
     setDeleteIsModalOpen(false);
   };
-  /** Delete end */
+  /**Category Delete end */
 
+
+
+
+  /*** Fetch All Category List Start  */
 
   const {
-    data: classList,
+    data: categoryList,
     isLoading,
-    refetch: fetchClassList,
-  } = useGetAllData(QUERY_KEYS.GET_ALL_ClASS_LIST, CLASS_END_POINT.get(page, limit, search, ""));
+    refetch: fetchCategoryList,
+  } = useGetAllData(QUERY_KEYS.GET_ALL_CATEGORY_LIST, CATEGORIE_END_POINT.get(page, limit, search, ""));
 
-
-
-
+  //Render Function
   const reFetchHandler = (isRender) => {
-    if (isRender) fetchClassList();
+    if (isRender) fetchCategoryList();
   };
 
-  const handlePageChange = (page) => {
-    setPage(page)
+  /*** Fetch All Subject List end  */
+
+
+
+
+
+
+  /*** Pagination Start  */
+  const pagination = {
+    total: categoryList?.total,
+    current: page,
+    pageSize: perPage,
+    defaultPageSize: 10,
+    showSizeChanger: true,
+    pageSizeOptions: ['2', '5', '10', '20', '30']
   };
 
+  const onChange = (
+    pagination,
+    filters,
+    sorter,
+    extra
+  ) => {
+    setPage(pagination.current);
+    setLimit(pagination.pageSize);
+  };
+
+  /*** Pagination End  */
 
 
 
-  /** Column Start */
+
+
+
+
+
+
+
+  /** Columns Start */
+
 
   const columns = [
     {
@@ -151,8 +191,8 @@ const Classes = () => {
       render: (text, record, index) => index + 1
     },
     {
-      title: 'Class Code',
-      dataIndex: 'classId',
+      title: 'Subject Code',
+      dataIndex: 'categoryId',
       // fixed: 'left',
     },
     {
@@ -175,8 +215,6 @@ const Classes = () => {
     },
   ];
 
-
-
   const actionButton = (row) => {
     return (
       <>
@@ -197,46 +235,16 @@ const Classes = () => {
     );
   };
 
-  /** Column End */
 
 
-
-
-
-  /*** Pagination Start  */
-  const pagination = {
-    total: classList?.total,
-    current: page,
-    pageSize: perPage,
-    defaultPageSize: 10,
-    showSizeChanger: true,
-    pageSizeOptions: ['2', '5', '10', '20', '30']
-  };
-
-  const onChange = (
-    pagination,
-    filters,
-    sorter,
-    extra
-  ) => {
-    setPage(pagination.current);
-    setLimit(pagination.pageSize);
-    console.log(pagination, filters, sorter, extra);
-  };
-
-  /*** Pagination End  */
-
-
-
-
-
+  /** Columns End */
 
   return (
     <div className="flex flex-col gap-10">
       <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="py-6 px-4 md:px-6 xl:px-7.5 flex justify-between items-center border-b border-stroke dark:border-strokedark">
           <h4 className="text-xl font-semibold text-black dark:text-white">
-            All Classes
+            All Category
           </h4>
           <button
             href="#"
@@ -257,21 +265,22 @@ const Classes = () => {
         </div>
 
 
-        <ClassForm isOpen={isModalOpen} onClose={closeModal} setEditData={editData} isParentRender={reFetchHandler} />
+        <CategoryForm isOpen={isModalOpen} onClose={closeModal} setEditData={editData} isParentRender={reFetchHandler} />
         <DeleteModal isOpen={isDeleteModalOpen} onClose={closeDeleteModal} data={editData} isParentRender={reFetchHandler} />
-
 
         <Table
           className="border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark text-black dark:text-white"
           columns={columns}
-          dataSource={classList?.data}
+          dataSource={categoryList?.data}
           scroll={{ x: 'max-content' }}
           pagination={pagination}
           onChange={onChange}
         />
+
+
       </div>
     </div>
   )
 }
 
-export default Classes
+export default Categories

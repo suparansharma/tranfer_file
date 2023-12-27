@@ -145,7 +145,7 @@ const SubjectForm = ({ isOpen, onClose, setEditData,isParentRender }) => {
                       name="name"
                       id="name"
                       className="bg-gray border-stroke border-gray-300 text-black text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                      placeholder="Type product name"
+                      placeholder="Type subject name"
                       required=""
                       defaultValue={subject?.name}
                       onChange={handleChange}

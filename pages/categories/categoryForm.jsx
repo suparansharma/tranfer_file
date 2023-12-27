@@ -1,40 +1,42 @@
+import React, { useCallback, useEffect, useState } from 'react';
 import ToastMessage from '@/components/Toast';
 import AnimatedMulti from '@/components/elements/AnimatedMulti';
-import { CLASS_END_POINT, SUBJECT_END_POINT } from '@/constants';
+import { CATEGORIE_END_POINT, CLASS_END_POINT, SUBJECT_END_POINT } from '@/constants';
 import { QUERY_KEYS } from '@/constants/queryKeys';
 import { post, put } from '@/helpers/api_helper';
 import { mapArrayToDropdown } from '@/helpers/common_Helper';
 import { useGetAllData } from '@/utils/hooks/useGetAllData';
-import React, { useCallback, useEffect, useState } from 'react';
-import Select from 'react-select';
 
 
-const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
 
+
+const CategoryForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
 
     const notify = useCallback((type, message) => {
         ToastMessage({ type, message });
     }, []);
-    
-    const [classInfo, setClassInfo] = useState({
+
+    const [loading, setLoading] = useState(false);
+    const [classes, setClasses] = useState([]);
+    console.log("classes", classes);
+
+    const [categoryInfo, setCategoryInfo] = useState({
         name: '',
-        subject: [],
+        class: [],
+        code: '',
         status: ''
     });
 
-
-
-    const [loading, setLoading] = useState(false);
-    const [subjects, setSubjects] = useState([]);
-
+    console.log("categoryInfo", categoryInfo);
     useEffect(() => {
         if (setEditData === null) {
-            setClassInfo({ name: '', status: '' });
+            setCategoryInfo({ name: '', class: [], code: '', status: '' });
         } else {
-            setClassInfo({
+            setCategoryInfo({
                 name: setEditData.name || '',
                 status: setEditData.status || '',
-                subject: setEditData?.subject?.map((t) => t.subjectId)?.map((t) => t?._id),
+                code: setEditData.code || '',
+                class: setEditData?.class?.map((t) => t.classId)?.map((t) => t?._id),
             });
 
         }
@@ -42,34 +44,37 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
 
 
 
-
     /**fetch subject list */
     const {
-        data: subjectList,
+        data: classList,
         isLoading,
-        refetch: fetchSubjectList,
+        refetch: fetchClassList,
     } = useGetAllData(
-        QUERY_KEYS.GET_ALL_SUBJECT_LIST,
-        SUBJECT_END_POINT.get(1, -1, '', status)
+        QUERY_KEYS.GET_ALL_ClASS_LIST,
+        CLASS_END_POINT.get(1, -1, '', status)
     );
 
     /**subject dropdown */
     useEffect(() => {
-        const SUBJECTDROPDOWN = mapArrayToDropdown(
-            subjectList?.data,
+        const CLASSDROPDOWN = mapArrayToDropdown(
+            classList?.data,
             'name',
             '_id'
         );
 
-        const allSubj = SUBJECTDROPDOWN?.map((item) => ({
+        const allClass = CLASSDROPDOWN?.map((item) => ({
             id: item?._id,
             value: item?.name,
         }));
-        setSubjects(allSubj);
-    }, [subjectList]);
+        setClasses(allClass);
+    }, [classList]);
 
 
     /**fetch subject list  End */
+
+
+
+
 
     const handleChange = (e, selectedOptions) => {
         const { name, value } = e.target;
@@ -77,22 +82,27 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
         // Handle different input fields
         if (name === 'status' && e.target.type === 'select-one') {
             // Handle select input
-            setClassInfo((prev) => ({
+            setCategoryInfo((prev) => ({
                 ...prev,
                 [name]: value === 'true' || value === true, // Convert the value to boolean
             }));
-        } else if (name === 'name') {
-            // Handle text input
-            setClassInfo((prev) => ({
+        } else if (name === 'code') {
+            setCategoryInfo((prev) => ({
                 ...prev,
                 [name]: value,
             }));
-        } else if (name === 'subject') {
-            const subjectIds = selectedOptions.map((option) => option.value);
-
-            setClassInfo((prev) => ({
+        } else if (name === 'name') {
+            // Handle text input
+            setCategoryInfo((prev) => ({
                 ...prev,
-                subject: subjectIds,
+                [name]: value,
+            }));
+        } else if (name === 'class') {
+            const classId = selectedOptions.map((option) => option.value);
+
+            setCategoryInfo((prev) => ({
+                ...prev,
+                class: classId,
             }));
         }
     };
@@ -101,17 +111,17 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
 
         try {
-            const formattedClassInfo = {
-                name: classInfo.name,
-                status: classInfo.status,
-                subject: classInfo.subject.map((subjectId) => ({ subjectId })),
+            const formattedCategoryInfo = {
+                name: categoryInfo.name,
+                status: categoryInfo.status,
+                code: categoryInfo.code,
+                class: categoryInfo.class.map((classId) => ({ classId })),
             };
 
             if (setEditData?._id) {
-                const update = await put(CLASS_END_POINT.update(setEditData._id), formattedClassInfo);
+                const update = await put(CATEGORIE_END_POINT.update(setEditData._id), formattedCategoryInfo);
                 if (update.status === 'SUCCESS') {
                     notify('success', update.message);
                     if (isParentRender) {
@@ -122,7 +132,7 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                     notify('error', update.errorMessage);
                 }
             } else {
-                const response = await post(CLASS_END_POINT.create(), formattedClassInfo);
+                const response = await post(CATEGORIE_END_POINT.create(), formattedCategoryInfo);
                 if (response.status === 'SUCCESS') {
                     notify('success', response.message);
                     if (isParentRender) {
@@ -139,8 +149,10 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
         } finally {
             setLoading(false);
         }
-    };
 
+        onClose();
+        setLoading(false);
+    }
 
 
     return (
@@ -153,12 +165,12 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                             {/* Modal content */}
                             <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    {setEditData?._id ? "Update Class" : "Create New Class"}
+                                    {setEditData?._id ? "Update Subject" : "Create New Category"}
                                 </h3>
                                 <button
                                     onClick={() => {
                                         onClose();
-                                        setClassInfo({});
+                                        setCategoryInfo({});
                                     }}
                                     type="button"
                                     className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
@@ -197,27 +209,47 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                             name="name"
                                             id="name"
                                             className="bg-gray border-stroke border-gray-300 text-black text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                                            placeholder="Type class name"
+                                            placeholder="Type Category name"
                                             required=""
-                                            defaultValue={classInfo?.name}
+                                            defaultValue={categoryInfo?.name}
                                             onChange={handleChange}
                                         />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label
+                                            htmlFor="code"
+                                            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                                        >
+                                            Code
+                                        </label>
+                                        <select
+                                            name='code'
+                                            id="Code"
+                                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                            defaultValue={categoryInfo?.code}
+                                            onChange={handleChange}
+                                        >
+                                            <option selected="">Select Status</option>
+                                            <option value="KT">KT</option>
+                                            <option value="MT">MT</option>
+
+                                        </select>
                                     </div>
 
 
                                     <div className="col-span-2">
                                         <label
-                                            htmlFor="subject"
+                                            htmlFor="class"
                                             className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                                         >
-                                            Subject
+                                            Class
                                         </label>
                                         <AnimatedMulti
-                                            options={subjects}
+                                            options={classes}
                                             labelKey="value"
                                             valueKey="id"
-                                            onChange={(selectedOptions) => handleChange({ target: { name: 'subject' } }, selectedOptions)}
-                                            selectedValues={classInfo?.subject}
+                                            onChange={(selectedOptions) => handleChange({ target: { name: 'class' } }, selectedOptions)}
+                                            selectedValues={categoryInfo?.class}
                                         />
                                     </div>
 
@@ -225,6 +257,7 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                         <label
                                             htmlFor="status"
                                             className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+
                                         >
                                             Status
                                         </label>
@@ -232,17 +265,15 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                             name='status'
                                             id="status"
                                             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                            defaultValue={categoryInfo?.status}
                                             onChange={handleChange}
-                                            value={classInfo?.status}
                                         >
-                                            <option selected="">Select category</option>
+                                            <option selected="">Select Status</option>
                                             <option value={true}>Active</option>
                                             <option value={false}>Inactive</option>
 
                                         </select>
                                     </div>
-
-
 
                                 </div>
                                 <div className="ml-auto">
@@ -262,7 +293,7 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                                 clipRule="evenodd"
                                             />
                                         </svg>
-                                        {setEditData?._id ? "Update Class" : "Create New Class"}
+                                        {setEditData?._id ? "Update Subject" : "Create New Category"}
 
                                         {/* Add new Subject */}
                                     </button>
@@ -278,4 +309,4 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
     )
 }
 
-export default ClassForm
+export default CategoryForm
