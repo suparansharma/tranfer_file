@@ -1,6 +1,6 @@
 import ToastMessage from '@/components/Toast';
 import AnimatedMulti from '@/components/elements/AnimatedMulti';
-import { LOCATION_END_POINT, CITY_END_POINT } from '@/constants';
+import { USER_END_POINT } from '@/constants';
 import { QUERY_KEYS } from '@/constants/queryKeys';
 import { post, put } from '@/helpers/api_helper';
 import { mapArrayToDropdown } from '@/helpers/common_Helper';
@@ -8,71 +8,43 @@ import { useGetAllData } from '@/utils/hooks/useGetAllData';
 import React, { useCallback, useEffect, useState } from 'react';
 import Select from 'react-select';
 
-const LocationForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
-    
+const UserForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
+
     const notify = useCallback((type, message) => {
         ToastMessage({ type, message });
     }, []);
-    const [city, setCity] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [locationInfo, setLocationInfo] = useState({
-        name: '',
-        city: '',
-        status: ''
+    const [city, setCity] = useState([]);
+    const [userInfo, setUserInfo] = useState({
+        fullName: '',
+        phone: '',
+        email: '',
+        role: null
     });
-
-
-
-
-    /**fetch city list */
-
-    const {
-        data: cityList,
-        isLoading,
-        refetch: fetchCityList,
-    } = useGetAllData(
-        QUERY_KEYS.GET_ALL_CITY_LIST,
-        CITY_END_POINT.get(1, -1, '', true)
-    );
-
-    /**city dropdown */
-    useEffect(() => {
-        const CITYDROPDOWN = mapArrayToDropdown(
-            cityList?.data,
-            'name',
-            '_id'
-        );
-        setCity(CITYDROPDOWN);
-    }, [cityList]);
-
-
-    /**fetch city list  End */
-
 
 
     useEffect(() => {
         if (setEditData === null) {
-            setLocationInfo({ name: '', status: '',city:'' });
+            setUserInfo({ fullName: '', phone: '',email:'',role:null });
         } else {
-            setLocationInfo({
-                name: setEditData.name || '',
-                status: setEditData.status || '',
-                city: setEditData?.city?._id,
+            setUserInfo({
+                fullName: setEditData.fullName || '',
+                phone: setEditData.phone || '',
+                email: setEditData?.email,
+                role: setEditData?.role,
             });
 
         }
     }, [setEditData?._id, setEditData]);
 
-
-
-
     const handleChange = (e, selectedOptions) => {
         const { name, value } = e.target;
-        setLocationInfo((prev) => ({
+        setUserInfo((prev) => ({
             ...prev,
             [name]: value,
         }));
     }
+
 
 
 
@@ -82,7 +54,7 @@ const LocationForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
         setLoading(true);
         if (setEditData?._id) {
           try {
-            const update = await put(LOCATION_END_POINT.update(setEditData._id), locationInfo);
+            const update = await put(USER_END_POINT.update(setEditData._id), userInfo);
             if (update.status == 'SUCCESS') {
               notify('success', update.message);
               if (isParentRender) {
@@ -96,7 +68,7 @@ const LocationForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
           }
         } else {
           try {
-            const response = await post(LOCATION_END_POINT.create(), locationInfo);
+            const response = await post(USER_END_POINT.create(), userInfo);
             if (response.status === 'SUCCESS') {
               notify('success', response.message);
               if (isParentRender) {
@@ -131,12 +103,12 @@ const LocationForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                             {/* Modal content */}
                             <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    {setEditData?._id ? "Update Class" : "Create New Class"}
+                                    {setEditData?._id ? "Update User" : "Create New User"}
                                 </h3>
                                 <button
                                     onClick={() => {
                                         onClose();
-                                        setLocationInfo({});
+                                        setUserInfo({});
                                     }}
                                     type="button"
                                     className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
@@ -165,69 +137,82 @@ const LocationForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                 <div className="grid gap-4 mb-4 grid-cols-2">
                                     <div className="col-span-2">
                                         <label
-                                            htmlFor="name"
+                                            htmlFor="fullName"
                                             className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                                         >
                                             Name
                                         </label>
                                         <input
                                             type="text"
-                                            name="name"
-                                            id="name"
+                                            name="fullName"
+                                            id="fullName"
                                             className="bg-gray border-stroke border-gray-300 text-black text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                             placeholder="Type class name"
                                             required=""
-                                            defaultValue={locationInfo?.name}
+                                            defaultValue={userInfo?.fullName}
                                             onChange={handleChange}
                                         />
                                     </div>
 
-
                                     <div className="col-span-2">
                                         <label
-                                            htmlFor="city"
+                                            htmlFor="email"
                                             className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                                         >
-                                            City
+                                            Email
                                         </label>
-                                        <select
-                                            name="city"
-                                            id="city"
-                                            className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                                            value={locationInfo?.city}
+                                        <input
+                                            type="text"
+                                            name="email"
+                                            id="email"
+                                            className="bg-gray border-stroke border-gray-300 text-black text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                            placeholder="Type class name"
+                                            required=""
+                                            defaultValue={userInfo?.email}
                                             onChange={handleChange}
-                                        >
-                                            <option value="" disabled>
-                                                Choose a city
-                                            </option>
-                                            {city.map((city) => (
-                                                <option key={city.id} value={city._id}>
-                                                    {city.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        />
+                                    </div>
 
+                                    <div className="col-span-2">
+                                    <label
+                                            htmlFor="phone"
+                                            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                                        >
+                                            Phone
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="phone"
+                                            id="phone"
+                                            className="bg-gray border-stroke border-gray-300 text-black text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                            placeholder="Type class name"
+                                            required=""
+                                            defaultValue={userInfo?.phone}
+                                            onChange={handleChange}
+                                        />
                                     </div>
 
                                     <div className="col-span-2">
                                         <label
-                                            htmlFor="status"
+                                            htmlFor="role"
                                             className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                                         >
-                                            Status
+                                            Role
                                         </label>
                                         <select
-                                            name='status'
-                                            id="status"
+                                            name='role'
+                                            id="role"
                                             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                             onChange={handleChange}
-                                            value={locationInfo?.status}
+                                            value={userInfo?.role}
                                         >
                                             <option selected="">Select category</option>
-                                            <option value={true}>Active</option>
-                                            <option value={false}>Inactive</option>
+                                            <option value={3}>Admin</option>
+                                            <option value={5}>Teacher</option>
+                                            <option value={4}>Guardian</option>
 
                                         </select>
+
                                     </div>
 
 
@@ -250,7 +235,7 @@ const LocationForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                                 clipRule="evenodd"
                                             />
                                         </svg>
-                                        {setEditData?._id ? "Update Class" : "Create New Class"}
+                                        {setEditData?._id ? "Update User" : "Create New User"}
 
                                         {/* Add new Subject */}
                                     </button>
@@ -266,4 +251,4 @@ const LocationForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
     )
 }
 
-export default LocationForm
+export default UserForm
