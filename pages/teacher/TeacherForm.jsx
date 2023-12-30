@@ -29,11 +29,11 @@ const TeacherForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
         city: '',
         location: '',
         address: '',
-        email: '',
         isPortalAccess: '',
         status: '',
     });
 
+        console.log("teacherInfo",teacherInfo);
 
     useEffect(() => {
         if (setEditData === null) {
@@ -43,7 +43,6 @@ const TeacherForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                 city: '',
                 location: '',
                 address: '',
-                email: '',
                 isPortalAccess: '',
                 status: '',
             });
@@ -131,7 +130,40 @@ const TeacherForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-    }
+
+        try {
+
+
+            if (setEditData?._id) {
+                const update = await put(TUTOR_END_POINT.update(setEditData._id), teacherInfo);
+                if (update.status === 'SUCCESS') {
+                    notify('success', update.message);
+                    if (isParentRender) {
+                        isParentRender(true);
+                    }
+                    onClose();
+                } else {
+                    notify('error', update.errorMessage);
+                }
+            } else {
+                const response = await post(TUTOR_END_POINT.create(), teacherInfo);
+                if (response.status === 'SUCCESS') {
+                    notify('success', response.message);
+                    if (isParentRender) {
+                        isParentRender(true);
+                    }
+                    onClose();
+                } else {
+                    notify('error', response.errorMessage);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            notify('error', error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
     return (
         <>
             {isOpen && (
@@ -142,7 +174,7 @@ const TeacherForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                             {/* Modal content */}
                             <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    {setEditData?._id ? "Update Class" : "Create New Class"}
+                                    {setEditData?._id ? "Update Tutor" : "Create New Tutor"}
                                 </h3>
                                 <button
                                     onClick={() => {
@@ -188,7 +220,7 @@ const TeacherForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                             className="bg-gray border-stroke border-gray-300 text-black text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                             placeholder="Type class name"
                                             required=""
-                                            defaultValue={teacherInfo?.name}
+                                            defaultValue={teacherInfo?.fullName}
                                             onChange={handleChange}
                                         />
                                     </div>
@@ -207,7 +239,7 @@ const TeacherForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                             className="bg-gray border-stroke border-gray-300 text-black text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                             placeholder="Type class name"
                                             required=""
-                                            defaultValue={teacherInfo?.name}
+                                            defaultValue={teacherInfo?.phone}
                                             onChange={handleChange}
                                         />
                                     </div>
@@ -225,7 +257,11 @@ const TeacherForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                             id="city"
                                             className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                             defaultValue={teacherInfo?.city}
-                                            onChange={handleCity}
+                                            // onChange={handleCity}
+                                            onChange={(e) => {
+                                                handleCity(e);
+                                                handleChange(e); // Assuming selectedOptions is available in your scope
+                                            }}
                                         >
                                             <option value="" disabled>
                                                 Choose a city
@@ -251,7 +287,7 @@ const TeacherForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                             id="city"
                                             className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                             value={teacherInfo?.location}
-                                            onChange={handleChangeLocation}
+                                            onChange={handleChange}
                                         >
                                             <option value="" disabled>
                                                 Choose a city
@@ -264,6 +300,47 @@ const TeacherForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                         </select>
 
                                     </div>
+
+                                    <div className="col-span-2">
+                                        <label
+                                            htmlFor="address"
+                                            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                                        >
+                                            Address
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="address"
+                                            id="address"
+                                            className="bg-gray border-stroke border-gray-300 text-black text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                            placeholder="Type class name"
+                                            required=""
+                                            defaultValue={teacherInfo?.address}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+
+                                    <div className="col-span-2">
+                                        <label
+                                            htmlFor="isPortalAccess"
+                                            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                                        >
+                                            Portal Access
+                                        </label>
+                                        <select
+                                            name='isPortalAccess'
+                                            id="isPortalAccess"
+                                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                            onChange={handleChange}
+                                            value={teacherInfo?.isPortalAccess}
+                                        >
+                                            <option selected="">Select category</option>
+                                            <option value={true}>Active</option>
+                                            <option value={false}>Inactive</option>
+
+                                        </select>
+                                    </div>
+
 
                                     <div className="col-span-2">
                                         <label
@@ -306,7 +383,7 @@ const TeacherForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
                                                 clipRule="evenodd"
                                             />
                                         </svg>
-                                        {setEditData?._id ? "Update Class" : "Create New Class"}
+                                        {setEditData?._id ? "Update Tutor" : "Create New Tutor"}
 
                                         {/* Add new Subject */}
                                     </button>
