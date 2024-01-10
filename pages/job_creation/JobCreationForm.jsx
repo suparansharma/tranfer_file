@@ -1,8 +1,19 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/router';
+import { useGetAllData } from '@/utils/hooks/useGetAllData';
+import { mapArrayToDropdown } from '@/helpers/common_Helper';
+import { QUERY_KEYS } from '@/constants/queryKeys';
+import { GUARDIAN_END_POINT } from '@/constants';
 
 const JobCreationForm = () => {
     const router = useRouter();
+    const [guardian, setGuardian] = useState([]);
+
+    console.log("guardian",guardian);
+
+
+
+
     const { data } = router.query;
     if (data === null) {
         // Handle null data, e.g., provide default values or log a message
@@ -17,6 +28,28 @@ const JobCreationForm = () => {
             console.error("Error parsing JSON data:", error);
         }
     }
+
+
+
+
+ /** Fetch Guardian List */
+  const {
+    data: guardianList,
+    isLoading,
+    refetch: fetchGuardianList,
+  } = useGetAllData(QUERY_KEYS.GET_ALL_GUARDIAN_LIST, GUARDIAN_END_POINT.get(1, -1, '', true));
+
+
+  /**guarian dropdown */
+  useEffect(() => {
+    const GUARDIANDROPDOWN = mapArrayToDropdown(
+      guardianList?.data?.data,
+      'fullName',
+      '_id'
+    );
+    setGuardian(GUARDIANDROPDOWN);
+  }, [guardianList]);
+  /** Fetch Guardian List End */
 
 
 
