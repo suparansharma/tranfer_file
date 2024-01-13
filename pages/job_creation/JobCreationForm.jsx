@@ -1,9 +1,18 @@
-import React from 'react'
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useGetAllData } from '@/utils/hooks/useGetAllData';
+import { QUERY_KEYS } from '@/constants/queryKeys';
+import { CATEGORIE_END_POINT, GUARDIAN_END_POINT } from '@/constants';
+import { mapArrayToDropdown } from '@/helpers/common_Helper';
 
 const JobCreationForm = () => {
+
     const router = useRouter();
     const { data } = router.query;
+    const [guardian, setGuardian] = useState([]);
+    const [category, setCategory] = useState([]);
+
+
     if (data === null) {
         // Handle null data, e.g., provide default values or log a message
         console.error("Received null data");
@@ -17,6 +26,55 @@ const JobCreationForm = () => {
             console.error("Error parsing JSON data:", error);
         }
     }
+
+
+
+
+
+    /** Fetch Guardian List */
+    const {
+        data: guardianList,
+        isLoading,
+        refetch: fetchGuardianList,
+    } = useGetAllData(QUERY_KEYS.GET_ALL_GUARDIAN_LIST, GUARDIAN_END_POINT.get(1, -1, '', true));
+
+
+    /**guarian dropdown */
+    useEffect(() => {
+        const GUARDIANDROPDOWN = mapArrayToDropdown(
+            guardianList?.data?.data,
+            'fullName',
+            '_id'
+        );
+        setGuardian(GUARDIANDROPDOWN);
+    }, [guardianList]);
+    /** Fetch Guardian List End */
+
+
+    /** Fetch category List */
+
+    const {
+        data: categoryList,
+        refetch: fetchTotalCategory,
+    } = useGetAllData(
+        QUERY_KEYS.GET_ALL_CATEGORY_LIST,
+        CATEGORIE_END_POINT.get(1, -1, '', true)
+    );
+console.log("categoryList",categoryList);
+
+    /**category dropdown */
+    useEffect(() => {
+        const CATEGORYDROPDOWN = mapArrayToDropdown(
+            categoryList?.data,
+            'name',
+            '_id'
+        );
+        setCategory(CATEGORYDROPDOWN);
+    }, [categoryList]);
+
+
+
+    /** Fetch CategoryList List End */
 
 
 
@@ -115,9 +173,28 @@ const JobCreationForm = () => {
                                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
 
                                             >
-                                                <option selected="">Select category</option>
-                                                <option value={true}>Active</option>
-                                                <option value={false}>Inactive</option>
+                                                <option value="" disabled>
+                                                    Choose a Guardian
+                                                </option>
+                                                {/* {guardian.map((guardian) => (
+                                                <option key={guardian.id} value={guardian._id}>
+                                                    {guardian.fullName}
+                                                </option>
+                                            ))} */}
+
+                                                {guardianList?.data?.data && (
+                                                    <>
+                                                        <option value="" disabled>
+                                                            Choose a Guardian
+                                                        </option>
+                                                        {guardianList.data.data.map((guardian) => (
+                                                            <option key={guardian._id} value={guardian._id}>
+                                                                {guardian.fullName}
+                                                            </option>
+                                                        ))}
+                                                    </>
+                                                )}
+
 
                                             </select>
                                         </div>
@@ -137,9 +214,9 @@ const JobCreationForm = () => {
                                             <input
                                                 className="w-full rounded border border-stroke bg-gray py-3 pl-11.5 pr-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                 type="text"
-                                                name="full_name"
-                                                id="full_name"
-                                                placeholder="Devid Jhon"
+                                                name="phone"
+                                                id="phone"
+                                                placeholder="Enter the phone number"
 
                                             />
                                         </div>
@@ -153,14 +230,16 @@ const JobCreationForm = () => {
                                                 Tuition Type
                                             </label>
                                             <select
-                                                name='status'
+                                                name='tuitionType'
                                                 id="status"
                                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
 
                                             >
-                                                <option selected="">Select category</option>
-                                                <option value={true}>Active</option>
-                                                <option value={false}>Inactive</option>
+                                                <option selected="">Select a option</option>
+                                                <option value={"Home Tutoring"}> Home Tutoring </option>
+                                                <option value={"Online Tutoring"}>Online Tutoring</option>
+                                                <option value={"Group Tutoring"}>Group Tutoring</option>
+                                                <option value={"Package Tutoring"}>Package Tutoring</option>
 
                                             </select>
                                         </div>
@@ -175,6 +254,7 @@ const JobCreationForm = () => {
                                                 htmlFor="emailAddress"
                                             >
                                                 Category
+                                                {/* categoryList */}
                                             </label>
                                             <div className="relative">
                                                 <select
@@ -183,9 +263,19 @@ const JobCreationForm = () => {
                                                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
 
                                                 >
-                                                    <option selected="">Select category</option>
-                                                    <option value={true}>Active</option>
-                                                    <option value={false}>Inactive</option>
+                                                    {categoryList?.data && (
+                                                    <>
+                                                        <option value="" disabled>
+                                                            Choose a Guardian
+                                                        </option>
+                                                        {categoryList.data.map((category) => (
+                                                            <option key={category._id} value={category._id}>
+                                                                {category.name}
+                                                            </option>
+                                                        ))}
+                                                    </>
+                                                )}
+
 
                                                 </select>
                                             </div>
