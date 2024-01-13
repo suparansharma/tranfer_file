@@ -8,6 +8,10 @@ import { mapArrayToDropdown } from '@/helpers/common_Helper';
 const JobCreationForm = () => {
 
     const router = useRouter();
+
+
+
+
     const { data } = router.query;
     const [guardian, setGuardian] = useState([]);
     const [category, setCategory] = useState([]);
