@@ -5,11 +5,14 @@ import makeAnimated from 'react-select/animated';
 const animatedComponents = makeAnimated();
 
 const AnimatedMulti = ({ options, labelKey, valueKey, onChange, selectedValues }) => {
+  // Ensure options is an array and not undefined
   const transformOptions = (options) => {
-    return options.map((option) => ({
-      label: option[labelKey],
-      value: option[valueKey],
-    }));
+    return Array.isArray(options)
+      ? options.map((option) => ({
+          label: option[labelKey],
+          value: option[valueKey],
+        }))
+      : [];
   };
 
   const transformedOptions = transformOptions(options);
@@ -27,7 +30,9 @@ const AnimatedMulti = ({ options, labelKey, valueKey, onChange, selectedValues }
       isMulti
       options={transformedOptions}
       onChange={handleChange}
-      value={transformedOptions.filter((option) => selectedValues && selectedValues.includes(option.value))}
+      value={transformedOptions.filter(
+        (option) => selectedValues && selectedValues.includes(option.value)
+      )}
     />
   );
 };

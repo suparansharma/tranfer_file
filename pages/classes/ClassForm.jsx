@@ -46,7 +46,7 @@ const ClassForm = ({ isOpen, onClose, setEditData, isParentRender }) => {
     /**fetch subject list */
     const {
         data: subjectList,
-        isLoading,
+        isLoadig,
         refetch: fetchSubjectList,
     } = useGetAllData(
         QUERY_KEYS.GET_ALL_SUBJECT_LIST,

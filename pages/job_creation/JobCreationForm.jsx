@@ -2,19 +2,28 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useGetAllData } from '@/utils/hooks/useGetAllData';
 import { QUERY_KEYS } from '@/constants/queryKeys';
-import { CATEGORIE_END_POINT, GUARDIAN_END_POINT } from '@/constants';
+import { CATEGORIE_END_POINT, CITY_END_POINT, GUARDIAN_END_POINT, LOCATION_END_POINT, SUBJECT_END_POINT } from '@/constants';
 import { mapArrayToDropdown } from '@/helpers/common_Helper';
+import ToggleSwitch from '@/components/elements/toggleSwitch';
+import { get } from '@/helpers/api_helper';
+import AnimatedMulti from '@/components/elements/AnimatedMulti';
 
 const JobCreationForm = () => {
 
     const router = useRouter();
 
 
-
-
     const { data } = router.query;
     const [guardian, setGuardian] = useState([]);
     const [category, setCategory] = useState([]);
+    const [isTrue, setIsTrue] = useState(false);
+    const [classes, setClasses] = useState([]);
+    const [subjects, setSubjects] = useState([]);
+    const [city, setCity] = useState([]);
+    const [location, setLocation] = useState([]);
+    console.log("location", location);
+    const [code, setCode] = useState("");
+
 
 
     if (data === null) {
@@ -55,6 +64,9 @@ const JobCreationForm = () => {
     /** Fetch Guardian List End */
 
 
+
+
+
     /** Fetch category List */
 
     const {
@@ -64,7 +76,6 @@ const JobCreationForm = () => {
         QUERY_KEYS.GET_ALL_CATEGORY_LIST,
         CATEGORIE_END_POINT.get(1, -1, '', true)
     );
-console.log("categoryList",categoryList);
 
     /**category dropdown */
     useEffect(() => {
@@ -82,6 +93,120 @@ console.log("categoryList",categoryList);
 
 
 
+
+
+    /**fetch class   End */
+    const handleCategory = async (value) => {
+        try {
+            const fetchCategory = await get(CATEGORIE_END_POINT.info(value));
+            console.log("fetchCategory", fetchCategory);
+
+            setCode(fetchCategory?.data?.code);
+
+            const classInfo = fetchCategory?.data?.class.map((item) => ({
+                _id: item?.classId?._id,
+                name: item?.classId?.name,
+            }));
+
+            const CLASSDROPDOWN = classInfo.map((item) => ({
+                id: item?._id,
+                value: item?.name,
+            }));
+
+            setClasses(CLASSDROPDOWN);
+        } catch (error) {
+            console.error('Error fetching category:', error);
+        }
+    };
+
+    //   useEffect(() => {
+
+    //     setClasses([]);
+    //   }, [code]);
+    /**fetch class list  End */
+
+
+
+
+
+    /**fetch subject list */
+    const {
+        data: subjectList,
+        refetch: fetchSubjectList,
+    } = useGetAllData(
+        QUERY_KEYS.GET_ALL_SUBJECT_LIST,
+        SUBJECT_END_POINT.get(1, -1, '', status)
+    );
+
+    /**subject dropdown */
+    useEffect(() => {
+        const SUBJECTDROPDOWN = mapArrayToDropdown(
+            subjectList?.data,
+            'name',
+            '_id'
+        );
+
+        const allSubj = SUBJECTDROPDOWN?.map((item) => ({
+            id: item?._id,
+            value: item?.name,
+        }));
+        setSubjects(allSubj);
+    }, [subjectList]);
+
+
+    /**fetch subject list  End */
+
+
+
+
+
+    /** Fetch city */
+    const {
+        data: cityList,
+        refetch: fetchCityList,
+    } = useGetAllData(
+        QUERY_KEYS.GET_ALL_CITY_LIST,
+        CITY_END_POINT.get(1, -1, '', true)
+    );
+
+    /**city dropdown */
+    useEffect(() => {
+        const CITYDROPDOWN = mapArrayToDropdown(
+            cityList?.data,
+            'name',
+            '_id'
+        );
+        setCity(CITYDROPDOWN);
+    }, [cityList]);
+
+    /** end city dropdown */
+
+
+
+
+    /**fetch location list */
+
+    const handleLocation = async (cityId) => {
+        try {
+            // Fetch location data based on cityId
+            const fetchLocation = await get(LOCATION_END_POINT.getLocationByCityId(cityId));
+
+            // Map fetched location data to dropdown format
+            const LOCATIONDROPDOWN = fetchLocation.data.map((item) => ({
+                id: item?._id,
+                value: item?.name,
+            }));
+
+            // Update the state with the new location data
+            setLocation(LOCATIONDROPDOWN);
+        } catch (error) {
+            console.error('Error fetching location:', error);
+        }
+    };
+
+    /**fetch location list  End */
+
+
     return (
         <>
             <div className="mx-auto max-w-250">
@@ -96,20 +221,9 @@ console.log("categoryList",categoryList);
                                     Information of Personal
                                 </h3>
                                 <div className="flex justify-end">
-                                    <label className="relative inline-flex items-center me-5 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            defaultValue=""
-                                            className="sr-only peer"
-                                            defaultChecked=""
-                                        />
-                                        <div className="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-purple-800 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-green-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600" />
-                                        <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-                                            Green
-                                        </span>
-                                    </label>
 
 
+                                    <ToggleSwitch value={isTrue} setValue={setIsTrue} />
                                 </div>
                             </div>
 
@@ -262,28 +376,24 @@ console.log("categoryList",categoryList);
                                             </label>
                                             <div className="relative">
                                                 <select
+                                                    onChange={(e) => handleCategory(e.target.value)}
                                                     name='status'
                                                     id="status"
-                                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-
+                                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                 >
-                                                    {categoryList?.data && (
-                                                    <>
-                                                        <option value="" disabled>
-                                                            Choose a Guardian
-                                                        </option>
-                                                        {categoryList.data.map((category) => (
+                                                    <option value="" disabled>
+                                                        Choose a Guardian
+                                                    </option>
+                                                    {categoryList?.data &&
+                                                        categoryList.data.map((category) => (
                                                             <option key={category._id} value={category._id}>
                                                                 {category.name}
                                                             </option>
                                                         ))}
-                                                    </>
-                                                )}
-
-
                                                 </select>
                                             </div>
                                         </div>
+
                                         <div className="w-full sm:w-1/2">
                                             <label
                                                 className="mb-3 block text-sm font-medium text-black dark:text-white"
@@ -294,10 +404,10 @@ console.log("categoryList",categoryList);
                                             </label>
                                             <input
                                                 className="w-full rounded border border-stroke bg-gray py-3 pl-11.5 pr-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                                                type="text"
-                                                name="full_name"
-                                                id="full_name"
-                                                placeholder="Devid Jhon"
+                                                type="number"
+                                                name="noOfStudent"
+                                                id="noOfStudent"
+                                                placeholder="Enter the number of students"
 
                                             />
                                         </div>
@@ -311,19 +421,13 @@ console.log("categoryList",categoryList);
                                             >
                                                 Class/Course
                                             </label>
-                                            <div className="relative">
-
-                                                <select
-                                                    name="id_type"
-                                                    id="countries"
-                                                    className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-
-                                                >
-                                                    <option value>Choose a Id</option>
-                                                    <option value="nid">Nid</option>
-                                                    <option value="passport">Passport</option>
-                                                </select>
-                                            </div>
+                                            <AnimatedMulti
+                                                options={classes}
+                                                labelKey="value"
+                                                valueKey="id"
+                                            // onChange={(selectedOptions) => handleChange({ target: { name: 'class' } }, selectedOptions)}
+                                            // selectedValues={categoryInfo?.class}
+                                            />
                                         </div>
 
                                         <div className="w-full sm:w-1/2">
@@ -333,19 +437,13 @@ console.log("categoryList",categoryList);
                                             >
                                                 Required Subject
                                             </label>
-                                            <div className="relative">
-
-                                                <select
-                                                    name="id_type"
-                                                    id="countries"
-                                                    className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-
-                                                >
-                                                    <option value>Choose a Id</option>
-                                                    <option value="nid">Nid</option>
-                                                    <option value="passport">Passport</option>
-                                                </select>
-                                            </div>
+                                            <AnimatedMulti
+                                                options={subjects}
+                                                labelKey="value"
+                                                valueKey="id"
+                                            // onChange={(selectedOptions) => handleChange({ target: { name: 'class' } }, selectedOptions)}
+                                            // selectedValues={categoryInfo?.class}
+                                            />
                                         </div>
                                     </div>
                                     <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
@@ -362,11 +460,21 @@ console.log("categoryList",categoryList);
                                                     name="id_type"
                                                     id="countries"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-
+                                                    // onChange={handleCity}
+                                                    onChange={(e) => handleLocation(e.target.value)}
                                                 >
-                                                    <option value>Choose a Id</option>
-                                                    <option value="nid">Nid</option>
-                                                    <option value="passport">Passport</option>
+                                                    {city && (
+                                                        <>
+                                                            <option value="" disabled>
+                                                                Choose a Guardian
+                                                            </option>
+                                                            {city.map((city) => (
+                                                                <option key={city._id} value={city._id}>
+                                                                    {city.name}
+                                                                </option>
+                                                            ))}
+                                                        </>
+                                                    )}
                                                 </select>
                                             </div>
                                         </div>
@@ -378,19 +486,13 @@ console.log("categoryList",categoryList);
                                             >
                                                 Location
                                             </label>
-                                            <div className="relative">
-
-                                                <select
-                                                    name="id_type"
-                                                    id="countries"
-                                                    className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-
-                                                >
-                                                    <option value>Choose a Id</option>
-                                                    <option value="nid">Nid</option>
-                                                    <option value="passport">Passport</option>
-                                                </select>
-                                            </div>
+                                            <AnimatedMulti
+                                                options={location}
+                                                labelKey="value"
+                                                valueKey="id"
+                                            // onChange={(selectedOptions) => handleChange({ target: { name: 'class' } }, selectedOptions)}
+                                            // selectedValues={categoryInfo?.class}
+                                            />
                                         </div>
                                     </div>
 
@@ -438,10 +540,10 @@ console.log("categoryList",categoryList);
 
                                             <textarea
                                                 className="w-full rounded border border-stroke bg-gray py-3 pl-11.5 pr-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                                                name="about"
+                                                name="address"
                                                 id="bio"
                                                 rows={3}
-                                                placeholder="Write your bio here"
+                                                placeholder="Write your address here"
 
                                             ></textarea>
                                         </div>
@@ -482,7 +584,7 @@ console.log("categoryList",categoryList);
                                                 <label className="inline-flex items-center">
                                                     <input
                                                         type="radio"
-                                                        name="gender"
+                                                        name="studentGender"
                                                         value="male"
 
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
@@ -494,7 +596,7 @@ console.log("categoryList",categoryList);
                                                 <label className="inline-flex items-center">
                                                     <input
                                                         type="radio"
-                                                        name="gender"
+                                                        name="studentGender"
                                                         value="female"
 
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
@@ -505,7 +607,7 @@ console.log("categoryList",categoryList);
                                                 <label className="inline-flex items-center">
                                                     <input
                                                         type="radio"
-                                                        name="gender"
+                                                        name="studentGender"
                                                         value="other"
 
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
@@ -579,8 +681,13 @@ console.log("categoryList",categoryList);
 
                                                 >
                                                     <option value>Choose a Id</option>
-                                                    <option value="nid">Nid</option>
-                                                    <option value="passport">Passport</option>
+                                                    <option value={1}>1 Day Per Week</option>
+                                                    <option value={2}>2 Day Per Week</option>
+                                                    <option value={3}>3 Day Per Week</option>
+                                                    <option value={4}>4 Day Per Week</option>
+                                                    <option value={5}>5 Day Per Week</option>
+                                                    <option value={6}>6 Day Per Week</option>
+                                                    <option value={7}>7 Day Per Week</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -594,7 +701,7 @@ console.log("categoryList",categoryList);
                                             <input
                                                 className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                 type="text"
-                                                name="mobile_number"
+                                                name="preferenceInstitute"
                                                 id="phoneNumber"
                                                 placeholder="+990 3343 7865"
 
@@ -626,18 +733,16 @@ console.log("categoryList",categoryList);
                                         <div className="w-full sm:w-1/2">
                                             <label
                                                 className="mb-3 block text-sm font-medium text-black dark:text-white"
-                                                htmlFor="nationality"
-
+                                                htmlFor="tutoringTime"
                                             >
                                                 Tutoring Time
                                             </label>
                                             <input
-                                                className="w-full custom-input-date custom-input-date-1 rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                                                type="date"
-                                                name="dob"
-                                                id="dob"
-                                                placeholder="+990 3343 7865"
-
+                                                className="w-full custom-input-time rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                                type="time"
+                                                name="tutoringTime"
+                                                id="tutoringTime"
+                                                placeholder="HH:mm"
                                             />
                                         </div>
                                     </div>
@@ -653,14 +758,15 @@ console.log("categoryList",categoryList);
                                             <div className="relative">
 
                                                 <select
-                                                    name="id_type"
+                                                    name="salaryType"
                                                     id="countries"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
 
                                                 >
                                                     <option value>Choose a Id</option>
-                                                    <option value="nid">Nid</option>
-                                                    <option value="passport">Passport</option>
+                                                    <option value="Fixed">Fixed</option>
+                                                    <option value="Range">Range</option>
+                                                    <option value="Negotiable">Negotiable</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -674,14 +780,14 @@ console.log("categoryList",categoryList);
                                             <div className="relative">
 
                                                 <select
-                                                    name="id_type"
+                                                    name="status"
                                                     id="countries"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
 
                                                 >
-                                                    <option value>Choose a Id</option>
-                                                    <option value="nid">Nid</option>
-                                                    <option value="passport">Passport</option>
+                                                    <option value>Status</option>
+                                                    <option value={true}>Active</option>
+                                                    <option value={false}>Inactive</option>
                                                 </select>
                                             </div>
                                         </div>
