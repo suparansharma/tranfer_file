@@ -2,14 +2,18 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useGetAllData } from '@/utils/hooks/useGetAllData';
 import { QUERY_KEYS } from '@/constants/queryKeys';
-import { CATEGORIE_END_POINT, CITY_END_POINT, GUARDIAN_END_POINT, LOCATION_END_POINT, SUBJECT_END_POINT } from '@/constants';
+import { CATEGORIE_END_POINT, CITY_END_POINT, GUARDIAN_END_POINT, JOB_REQUEST_END_POINT, LOCATION_END_POINT, SUBJECT_END_POINT } from '@/constants';
 import { mapArrayToDropdown } from '@/helpers/common_Helper';
 import ToggleSwitch from '@/components/elements/toggleSwitch';
-import { get } from '@/helpers/api_helper';
+import { get, post, put } from '@/helpers/api_helper';
 import AnimatedMulti from '@/components/elements/AnimatedMulti';
+import ToastMessage from '@/components/Toast';
 
 const JobCreationForm = () => {
 
+    const notify = useCallback((type, message) => {
+        ToastMessage({ type, message });
+    }, []);
     const router = useRouter();
     const { data } = router.query;
     const [guardian, setGuardian] = useState([]);
@@ -21,14 +25,16 @@ const JobCreationForm = () => {
     const [subjects, setSubjects] = useState([]);
     const [city, setCity] = useState([]);
     const [location, setLocation] = useState([]);
-    console.log("location", location);
+    const [loading, setLoading] = useState(false);
     const [code, setCode] = useState("");
+    const [numOfStudent, setNumOfStudent] = useState(null);
+    console.log("numOfStudent", numOfStudent);
 
 
     const [jobCreation, setJobCreation] = useState({
         guardian: '',
         category: '',
-        noOfStudent: '',
+        noOfStudent: null,
         subject: [],
         class: [],
         city: '',
@@ -56,19 +62,42 @@ const JobCreationForm = () => {
 
 
 
-    if (data === null) {
-        // Handle null data, e.g., provide default values or log a message
-        console.error("Received null data");
-    } else {
-        // Parse the JSON data
-        try {
-            const parsedData = JSON.parse(data);
-            // Continue processing the parsed data
-            console.log("data", parsedData);
-        } catch (error) {
-            console.error("Error parsing JSON data:", error);
+    // if (data === null) {
+    //     // Handle null data, e.g., provide default values or log a message
+    //     console.error("Received null data");
+    // } else {
+    //     // Parse the JSON data
+    //     try {
+    //         const parsedData = JSON.parse(data);
+    //         // Continue processing the parsed data
+    //         console.log("data", parsedData);
+    //     } catch (error) {
+    //         console.error("Error parsing JSON data:", error);
+    //     }
+    // }
+
+
+    const [editData, setEditData] = useState(null);
+
+    useEffect(() => {
+        if (data === null) {
+            // Handle null data, e.g., provide default values or log a message
+            console.error("Received null data");
+
+        } else {
+            // Parse the JSON data
+            try {
+                const parsedData = JSON.parse(data);
+                // Continue processing the parsed data
+                console.log("Parsed data:", parsedData);
+
+                // Set the editData state with the parsed data
+                setEditData(parsedData);
+            } catch (error) {
+                console.error("Error parsing JSON data:", error);
+            }
         }
-    }
+    }, [data]);
     /** Fetch Guardian List */
 
 
@@ -244,21 +273,20 @@ const JobCreationForm = () => {
     const handleChange = (e, selectedOptions) => {
         const { name, value } = e.target;
 
-        if (name === 'status' && e.target.type === 'select-one') {
+        if (name === 'status' || name === 'isApproval') {
             // Handle select input
             setJobCreation((prev) => ({
                 ...prev,
                 [name]: value === 'true' || value === true, // Convert the value to boolean
             }));
-        } else if (name === 'guardian' || name === 'phone' || name === 'tuitionType' || name === 'noOfStudent' || name === 'city' || name === 'location' || name === 'studentGender' || name ==='teacherGender'||
-         name ==='daysPerWeek' ||  name ==='preferenceInstitute' ||  name ==='daysPerWeek' ||  name ==='hireDate' ||  name ==='tutoringTime' ||  name ==='salaryType' ||  name ==='status'
-        
-        ) {
+        } else if (name === 'guardian' || name === 'phone' || name === 'tuitionType' || name === 'city' || name === 'location' || name === 'studentGender' || name === 'teacherGender' || name === 'noOfStudent' ||
+            name === 'daysPerWeek' || name === 'preferenceInstitute' || name === 'hireDate' || name === 'tutoringTime' || name === 'salaryType' || name === 'salary' || name === 'jobStatus' || name === 'address' || name === 'category') {
+            // Convert value to integer for 'noOfStudent' and 'daysPerWeek' fields
             setJobCreation((prev) => ({
                 ...prev,
-                [name]: value,
+                [name]: name === 'noOfStudent' || name === 'daysPerWeek' ? parseInt(value, 10) : value,
             }));
-        }  else if (name === 'class') {
+        } else if (name === 'class') {
             const classId = selectedOptions.map((option) => option.value);
 
             setJobCreation((prev) => ({
@@ -273,8 +301,51 @@ const JobCreationForm = () => {
                 subject: subjectId,
             }));
         }
+    }
+
+
+
+    const handleStudentNumberChange = (e) => {
+        const value = e.target.value;
+        setNumOfStudent(value);
+    }
+
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        console.log("submited data is", jobCreation);
+
+
+        try {
+            if (editData?._id) {
+              const update = await put(JOB_REQUEST_END_POINT.update(editData?._id), jobCreation);
+              if (update.status === 'SUCCESS') {
+                notify('success', update.message);
+                router.push('/job_creation')
+              } else {
+                notify('error', update.errorMessage);
+                setLoading(false);
+              }
+            } else {
+              const response = await post(JOB_REQUEST_END_POINT.create(), jobCreation);
+              if (response.status === 'SUCCESS') {
+                notify('success', response.message);
+                router.push('/job_creation')
+
+              } else {
+                notify('error', response.errorMessage);
+                setLoading(false);
+              }
+            }
+            setLoading(false);
+          } catch (error) {
+            notify('error', error.message);
+            setLoading(false);
+          }
 
     }
+
 
     return (
         <>
@@ -358,15 +429,15 @@ const JobCreationForm = () => {
                                             <div className="mb-5.5">
                                                 <label
                                                     className="mb-3 block text-sm font-medium text-black dark:text-white"
-                                                    htmlFor="full_name"
+                                                    htmlFor="guardian"
                                                 >
-                                                    Full Name
+                                                    Guardian
                                                 </label>
                                                 <div className="relative">
 
                                                     <select
                                                         name='guardian'
-                                                        id="status"
+                                                        id="guardian"
                                                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                         onChange={handleChange}
                                                         value={jobCreation?.guardian}
@@ -420,13 +491,13 @@ const JobCreationForm = () => {
                                         <div className="w-full sm:w-1/2">
                                             <label
                                                 className="mb-3 block text-sm font-medium text-black dark:text-white"
-                                                htmlFor="nationality"
+                                                htmlFor="tuitionType"
                                             >
                                                 Tuition Type
                                             </label>
                                             <select
                                                 name='tuitionType'
-                                                id="status"
+                                                id="tuitionType"
                                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                 onChange={handleChange}
                                             >
@@ -449,18 +520,20 @@ const JobCreationForm = () => {
                                                 htmlFor="emailAddress"
                                             >
                                                 Category
-                                                {/* categoryList */}
                                             </label>
                                             <div className="relative">
                                                 <select
-                                                    onChange={(e) => handleCategory(e.target.value)}
+                                                    // onChange={(e) => handleCategory(e.target.value)}
+                                                    onChange={(e) => {
+                                                        handleChange(e);
+                                                        handleCategory(e.target.value);
+                                                    }}
                                                     name='category'
                                                     id="status"
                                                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                                                // onChange={handleChange}
                                                 >
                                                     <option value="" disabled>
-                                                        Choose a Guardian
+                                                        Choose a Category
                                                     </option>
                                                     {categoryList?.data &&
                                                         categoryList.data.map((category) => (
@@ -475,7 +548,7 @@ const JobCreationForm = () => {
                                         <div className="w-full sm:w-1/2">
                                             <label
                                                 className="mb-3 block text-sm font-medium text-black dark:text-white"
-                                                htmlFor="phoneNumber"
+                                                htmlFor="noOfStudent"
                                             >
                                                 Number of Students
 
@@ -486,7 +559,10 @@ const JobCreationForm = () => {
                                                 name="noOfStudent"
                                                 id="noOfStudent"
                                                 placeholder="Enter the number of students"
-                                                onChange={handleChange}
+                                                onChange={(e) => {
+                                                    handleChange(e);
+                                                    handleStudentNumberChange(e);
+                                                }}
                                             />
                                         </div>
                                     </div>
@@ -524,6 +600,38 @@ const JobCreationForm = () => {
                                             />
                                         </div>
                                     </div>
+
+                                    <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
+
+
+
+
+                                        {code === 'MT' && (
+                                            <div className="w-full sm:w-1/2">
+                                                <label
+                                                    className="mb-3 block text-sm font-medium text-black dark:text-white"
+                                                    htmlFor="nationality"
+                                                >
+                                                    curriculum
+                                                </label>
+                                                <select
+                                                    name='curriculum'
+                                                    id="status"
+                                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+
+                                                >
+                                                    <option selected="">Select a option</option>
+                                                    <option value={"Ed-Excel"}> Ed-Excel </option>
+                                                    <option value={"Cambridge"}>Cambridge</option>
+                                                    <option value={"IB"}>IB</option>
+
+                                                </select>
+                                            </div>
+                                        )}
+                                        <div className="w-full sm:w-1/2">
+
+                                        </div>
+                                    </div>
                                     <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
                                         <div className="w-full sm:w-1/2">
                                             <label
@@ -538,11 +646,9 @@ const JobCreationForm = () => {
                                                     name="city"
                                                     id="countries"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                                                    // onChange={handleChange}
-                                                    // onChange={(e) => handleLocation(e.target.value)}
                                                     onChange={(e) => {
                                                         handleChange(e);
-                                                        handleLocation(e.target.value);  // Assuming you want to call handleLocation here as well
+                                                        handleLocation(e.target.value);
                                                     }}
                                                 >
                                                     {city && (
@@ -574,7 +680,11 @@ const JobCreationForm = () => {
                                                     name="location"
                                                     id="countries"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                                                    onChange={handleChange}
+                                                    // onChange={handleChange}
+                                                    onChange={(e) => {
+                                                        handleChange(e);
+                                                        // handleLocation(e.target.value);
+                                                    }}
                                                 >
                                                     {location && (
                                                         <>
@@ -599,7 +709,7 @@ const JobCreationForm = () => {
                                     <div className="mb-5.5">
                                         <label
                                             className="mb-3 block text-sm font-medium text-black dark:text-white"
-                                            htmlFor="Username"
+                                            htmlFor="address"
                                         >
                                             Address
                                         </label>
@@ -683,7 +793,7 @@ const JobCreationForm = () => {
                                                     <input
                                                         type="radio"
                                                         name="studentGender"
-                                                        value="male"
+                                                        value="Male"
                                                         onChange={handleChange}
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
 
@@ -695,23 +805,23 @@ const JobCreationForm = () => {
                                                     <input
                                                         type="radio"
                                                         name="studentGender"
-                                                        value="female"
+                                                        value="Female"
                                                         onChange={handleChange}
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
                                                     />
                                                     <span className="ml-2">Female</span>
                                                 </label>
-
-                                                <label className="inline-flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        name="studentGender"
-                                                        value="other"
-                                                        onChange={handleChange}
-                                                        className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
-                                                    />
-                                                    <span className="ml-2">Other</span>
-                                                </label>
+                                                {numOfStudent > 1 &&
+                                                    <label className="inline-flex items-center">
+                                                        <input
+                                                            type="radio"
+                                                            name="studentGender"
+                                                            value="Both"
+                                                            onChange={handleChange}
+                                                            className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
+                                                        />
+                                                        <span className="ml-2">Both</span>
+                                                    </label>}
                                             </div>
                                         </div>
 
@@ -728,7 +838,7 @@ const JobCreationForm = () => {
                                                     <input
                                                         type="radio"
                                                         name="teacherGender"
-                                                        value="male"
+                                                        value="Male"
                                                         onChange={handleChange}
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
 
@@ -740,7 +850,7 @@ const JobCreationForm = () => {
                                                     <input
                                                         type="radio"
                                                         name="teacherGender"
-                                                        value="female"
+                                                        value="Female"
                                                         onChange={handleChange}
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
                                                     />
@@ -751,11 +861,11 @@ const JobCreationForm = () => {
                                                     <input
                                                         type="radio"
                                                         name="teacherGender"
-                                                        value="other"
+                                                        value="Any"
                                                         onChange={handleChange}
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
                                                     />
-                                                    <span className="ml-2">Other</span>
+                                                    <span className="ml-2">Any </span>
                                                 </label>
                                             </div>
                                         </div>
@@ -873,6 +983,30 @@ const JobCreationForm = () => {
                                         <div className="w-full sm:w-1/2">
                                             <label
                                                 className="mb-3 block text-sm font-medium text-black dark:text-white"
+                                                htmlFor="salary"
+                                            >
+                                                Salary (BDT)
+                                            </label>
+                                            <input
+                                                className="w-full rounded border border-stroke bg-gray py-3 pl-11.5 pr-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                                type="text"
+                                                name="salary"
+                                                id="salary"
+                                                placeholder="Enter the phone number"
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+
+
+                                    </div>
+                                    <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
+
+
+
+
+                                        <div className="w-full sm:w-1/2">
+                                            <label
+                                                className="mb-3 block text-sm font-medium text-black dark:text-white"
                                                 htmlFor="fullName"
                                             >
                                                 Status
@@ -883,7 +1017,7 @@ const JobCreationForm = () => {
                                                     name="status"
                                                     id="countries"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-
+                                                    onChange={handleChange}
                                                 >
                                                     <option value>Status</option>
                                                     <option value={true}>Active</option>
@@ -891,43 +1025,7 @@ const JobCreationForm = () => {
                                                 </select>
                                             </div>
                                         </div>
-
-
-                                    </div>
-                                    <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
-
-
-
-
-                                        {code === 'MT' && (
-                                            <div className="w-full sm:w-1/2">
-                                                <label
-                                                    className="mb-3 block text-sm font-medium text-black dark:text-white"
-                                                    htmlFor="nationality"
-                                                >
-                                                    curriculum
-                                                </label>
-                                                <select
-                                                    name='curriculum'
-                                                    id="status"
-                                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-
-                                                >
-                                                    <option selected="">Select a option</option>
-                                                    <option value={"Ed-Excel"}> Ed-Excel </option>
-                                                    <option value={"Cambridge"}>Cambridge</option>
-                                                    <option value={"IB"}>IB</option>
-
-                                                </select>
-                                            </div>
-                                        )}
-                                        <div className="w-full sm:w-1/2">
-                                            {/* <label
-                                                className="mb-3 block text-sm font-medium text-black dark:text-white"
-                                                htmlFor="dob"
-                                            >
-                                                Phone
-                                            </label> */}
+                                        {/* <div className="w-full sm:w-1/2">
                                             <ToggleSwitch
                                                 value={isTrue}
                                                 setValue={setIsTrue}
@@ -936,74 +1034,116 @@ const JobCreationForm = () => {
                                                 unCheckedChildren="No"
                                                 label="Approval"
                                             />
+                                        </div> */}
+
+                                        <div className="w-full sm:w-1/2">
+                                            <label
+                                                className="mb-3 block text-sm font-medium text-black dark:text-white"
+                                                htmlFor="Approval"
+                                            >
+                                                Approval
+                                            </label>
+                                            <div className="relative">
+
+                                                <select
+                                                    name="isApproval"
+                                                    id="isApproval"
+                                                    className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                                    onChange={handleChange}
+                                                >
+                                                    <option value>Select..</option>
+                                                    <option value={true}>Active</option>
+                                                    <option value={false}>Inactive</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
 
+                                    <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
 
 
-                                    <div className="mb-5.5">
-                                        <label
-                                            className="mb-3 block text-sm font-medium text-black dark:text-white"
-                                            htmlFor="Username"
-                                        >
-                                            More Requirement
-                                        </label>
-                                        <div className="relative">
-                                            <span className="absolute left-4.5 top-4">
-                                                <svg
-                                                    className="fill-current"
-                                                    width="20"
-                                                    height="20"
-                                                    viewBox="0 0 20 20"
-                                                    fill="none"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <g opacity="0.8" clipPath="url(#clip0_88_10224)">
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            clipRule="evenodd"
-                                                            d="M1.56524 3.23223C2.03408 2.76339 2.66997 2.5 3.33301 2.5H9.16634C9.62658 2.5 9.99967 2.8731 9.99967 3.33333C9.99967 3.79357 9.62658 4.16667 9.16634 4.16667H3.33301C3.11199 4.16667 2.90003 4.25446 2.74375 4.41074C2.58747 4.56702 2.49967 4.77899 2.49967 5V16.6667C2.49967 16.8877 2.58747 17.0996 2.74375 17.2559C2.90003 17.4122 3.11199 17.5 3.33301 17.5H14.9997C15.2207 17.5 15.4326 17.4122 15.5889 17.2559C15.7452 17.0996 15.833 16.8877 15.833 16.6667V10.8333C15.833 10.3731 16.2061 10 16.6663 10C17.1266 10 17.4997 10.3731 17.4997 10.8333V16.6667C17.4997 17.3297 17.2363 17.9656 16.7674 18.4344C16.2986 18.9033 15.6627 19.1667 14.9997 19.1667H3.33301C2.66997 19.1667 2.03408 18.9033 1.56524 18.4344C1.0964 17.9656 0.833008 17.3297 0.833008 16.6667V5C0.833008 4.33696 1.0964 3.70107 1.56524 3.23223Z"
-                                                            fill=""
-                                                        />
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            clipRule="evenodd"
-                                                            d="M16.6664 2.39884C16.4185 2.39884 16.1809 2.49729 16.0056 2.67253L8.25216 10.426L7.81167 12.188L9.57365 11.7475L17.3271 3.99402C17.5023 3.81878 17.6008 3.5811 17.6008 3.33328C17.6008 3.08545 17.5023 2.84777 17.3271 2.67253C17.1519 2.49729 16.9142 2.39884 16.6664 2.39884ZM14.8271 1.49402C15.3149 1.00622 15.9765 0.732178 16.6664 0.732178C17.3562 0.732178 18.0178 1.00622 18.5056 1.49402C18.9934 1.98182 19.2675 2.64342 19.2675 3.33328C19.2675 4.02313 18.9934 4.68473 18.5056 5.17253L10.5889 13.0892C10.4821 13.196 10.3483 13.2718 10.2018 13.3084L6.86847 14.1417C6.58449 14.2127 6.28409 14.1295 6.0771 13.9225C5.87012 13.7156 5.78691 13.4151 5.85791 13.1312L6.69124 9.79783C6.72787 9.65131 6.80364 9.51749 6.91044 9.41069L14.8271 1.49402Z"
-                                                            fill=""
-                                                        />
-                                                    </g>
-                                                    <defs>
-                                                        <clipPath id="clip0_88_10224">
-                                                            <rect width="20" height="20" fill="white" />
-                                                        </clipPath>
-                                                    </defs>
-                                                </svg>
-                                            </span>
+                                        <div className="w-full sm:w-1/2">
+                                            <label
+                                                className="mb-3 block text-sm font-medium text-black dark:text-white"
+                                                htmlFor="Username"
+                                            >
+                                                More Requirement
+                                            </label>
+                                            <div className="relative">
+                                                <span className="absolute left-4.5 top-4">
+                                                    <svg
+                                                        className="fill-current"
+                                                        width="20"
+                                                        height="20"
+                                                        viewBox="0 0 20 20"
+                                                        fill="none"
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                    >
+                                                        <g opacity="0.8" clipPath="url(#clip0_88_10224)">
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                clipRule="evenodd"
+                                                                d="M1.56524 3.23223C2.03408 2.76339 2.66997 2.5 3.33301 2.5H9.16634C9.62658 2.5 9.99967 2.8731 9.99967 3.33333C9.99967 3.79357 9.62658 4.16667 9.16634 4.16667H3.33301C3.11199 4.16667 2.90003 4.25446 2.74375 4.41074C2.58747 4.56702 2.49967 4.77899 2.49967 5V16.6667C2.49967 16.8877 2.58747 17.0996 2.74375 17.2559C2.90003 17.4122 3.11199 17.5 3.33301 17.5H14.9997C15.2207 17.5 15.4326 17.4122 15.5889 17.2559C15.7452 17.0996 15.833 16.8877 15.833 16.6667V10.8333C15.833 10.3731 16.2061 10 16.6663 10C17.1266 10 17.4997 10.3731 17.4997 10.8333V16.6667C17.4997 17.3297 17.2363 17.9656 16.7674 18.4344C16.2986 18.9033 15.6627 19.1667 14.9997 19.1667H3.33301C2.66997 19.1667 2.03408 18.9033 1.56524 18.4344C1.0964 17.9656 0.833008 17.3297 0.833008 16.6667V5C0.833008 4.33696 1.0964 3.70107 1.56524 3.23223Z"
+                                                                fill=""
+                                                            />
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                clipRule="evenodd"
+                                                                d="M16.6664 2.39884C16.4185 2.39884 16.1809 2.49729 16.0056 2.67253L8.25216 10.426L7.81167 12.188L9.57365 11.7475L17.3271 3.99402C17.5023 3.81878 17.6008 3.5811 17.6008 3.33328C17.6008 3.08545 17.5023 2.84777 17.3271 2.67253C17.1519 2.49729 16.9142 2.39884 16.6664 2.39884ZM14.8271 1.49402C15.3149 1.00622 15.9765 0.732178 16.6664 0.732178C17.3562 0.732178 18.0178 1.00622 18.5056 1.49402C18.9934 1.98182 19.2675 2.64342 19.2675 3.33328C19.2675 4.02313 18.9934 4.68473 18.5056 5.17253L10.5889 13.0892C10.4821 13.196 10.3483 13.2718 10.2018 13.3084L6.86847 14.1417C6.58449 14.2127 6.28409 14.1295 6.0771 13.9225C5.87012 13.7156 5.78691 13.4151 5.85791 13.1312L6.69124 9.79783C6.72787 9.65131 6.80364 9.51749 6.91044 9.41069L14.8271 1.49402Z"
+                                                                fill=""
+                                                            />
+                                                        </g>
+                                                        <defs>
+                                                            <clipPath id="clip0_88_10224">
+                                                                <rect width="20" height="20" fill="white" />
+                                                            </clipPath>
+                                                        </defs>
+                                                    </svg>
+                                                </span>
 
-                                            <textarea
-                                                className="w-full rounded border border-stroke bg-gray py-3 pl-11.5 pr-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                                                name="about"
-                                                id="bio"
-                                                rows={3}
-                                                placeholder="Write your bio here"
+                                                <textarea
+                                                    className="w-full rounded border border-stroke bg-gray py-3 pl-11.5 pr-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                                    name="about"
+                                                    id="bio"
+                                                    rows={3}
+                                                    placeholder="Write your bio here"
+                                                    onChange={handleChange}
 
-                                            ></textarea>
+                                                ></textarea>
+                                            </div>
                                         </div>
+
+                                        {editData && <div className="w-full sm:w-1/2">
+                                            <label
+                                                className="mb-3 block text-sm font-medium text-black dark:text-white"
+                                                htmlFor="Approval"
+                                            >
+                                                Approval
+                                            </label>
+                                            <div className="relative">
+
+                                                <select
+                                                    name="isApproval"
+                                                    id="isApproval"
+                                                    className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                                    onChange={handleChange}
+                                                >
+                                                    <option value>Select..</option>
+                                                    <option value={true}>Active</option>
+                                                    <option value={false}>Inactive</option>
+                                                </select>
+                                            </div>
+                                        </div>}
                                     </div>
 
 
 
                                     <div className="flex justify-end gap-4.5">
-                                        {/* <button
-                                    className="flex justify-center rounded border border-stroke py-2 px-6 font-medium text-black hover:shadow-1 dark:border-strokedark dark:text-white"
-                                    type="submit"
-                                >
-                                    Cancel
-                                </button> */}
+
                                         <button
                                             className="flex justify-center rounded bg-primary py-2 px-6 font-medium text-gray hover:bg-opacity-95"
-                                            type="submit"
-                                        // onClick={() => { handleSubmit() }}
+                                            // type="submit"
+                                            onClick={handleSubmit}
                                         >
                                             Update
                                         </button>
