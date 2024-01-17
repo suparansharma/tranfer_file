@@ -28,7 +28,6 @@ const JobCreationForm = () => {
     const [loading, setLoading] = useState(false);
     const [code, setCode] = useState("");
     const [numOfStudent, setNumOfStudent] = useState(null);
-    console.log("numOfStudent", numOfStudent);
 
 
     const [jobCreation, setJobCreation] = useState({
@@ -58,7 +57,6 @@ const JobCreationForm = () => {
     });
 
 
-    console.log("jobCreation", jobCreation);
 
 
 
@@ -77,23 +75,23 @@ const JobCreationForm = () => {
     // }
 
 
-    const [editData, setEditData] = useState(null);
-
+    const [editData, setEditData] = useState(false);
+    console.log("editData", editData);
     useEffect(() => {
         if (data === null) {
             // Handle null data, e.g., provide default values or log a message
             console.error("Received null data");
+            setEditData(false)
 
         } else {
             // Parse the JSON data
             try {
                 const parsedData = JSON.parse(data);
                 // Continue processing the parsed data
-                console.log("Parsed data:", parsedData);
-
+                setEditData(true)
                 // Set the editData state with the parsed data
                 // setEditData(parsedData);
-                setJobCreation({    
+                setJobCreation({
                     guardian: parsedData?.guardian?._id,
                     category: parsedData?.category?._id,
                     noOfStudent: parsedData?.noOfStudent,
@@ -101,7 +99,7 @@ const JobCreationForm = () => {
                     class: parsedData?.class?.map((t) => t.classId)?.map((t) => t?._id),
                     studentGender: parsedData?.studentGender,
                     teacherGender: parsedData?.teacherGender,
-                    city:parsedData.city?._id,
+                    city: parsedData.city?._id,
                     location: parsedData?.location?._id,
                     address: parsedData?.address,
                     daysPerWeek: parsedData?.daysPerWeek,
@@ -112,7 +110,7 @@ const JobCreationForm = () => {
                     isApproval: parsedData?.isApproval,
                     tuitionType: parsedData.tuitionType,
                     hireDate: parsedData.hireDate,
-                    tutoringTime: parsedData.category,
+                    tutoringTime: parsedData.tutoringTime,
                     status: parsedData.status,
                 });
 
@@ -179,7 +177,6 @@ const JobCreationForm = () => {
     const handleCategory = async (value) => {
         try {
             const fetchCategory = await get(CATEGORIE_END_POINT.info(value));
-            console.log("fetchCategory", fetchCategory);
 
             setCode(fetchCategory?.data?.code);
 
@@ -297,13 +294,14 @@ const JobCreationForm = () => {
     const handleChange = (e, selectedOptions) => {
         const { name, value } = e.target;
 
-        if (name === 'status' || name === 'isApproval') {
+        if (name === 'status' || name === 'isApproval' && e.target.type === 'select-one') {
             // Handle select input
             setJobCreation((prev) => ({
                 ...prev,
                 [name]: value === 'true' || value === true, // Convert the value to boolean
             }));
-        } else if (name === 'guardian' || name === 'phone' || name === 'tuitionType' || name === 'city' || name === 'location' || name === 'studentGender' || name === 'teacherGender' || name === 'noOfStudent' ||
+        }
+        else if (name === 'guardian' || name === 'phone' || name === 'tuitionType' || name === 'city' || name === 'location' || name === 'studentGender' || name === 'teacherGender' || name === 'noOfStudent' ||
             name === 'daysPerWeek' || name === 'preferenceInstitute' || name === 'hireDate' || name === 'tutoringTime' || name === 'salaryType' || name === 'salary' || name === 'jobStatus' || name === 'address' || name === 'category') {
             // Convert value to integer for 'noOfStudent' and 'daysPerWeek' fields
             setJobCreation((prev) => ({
@@ -338,45 +336,44 @@ const JobCreationForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        console.log("submitted data is", jobCreation);
-      
+
         const subjects = jobCreation.subject?.map((subjectId) => ({
-          subjectId: subjectId,
+            subjectId: subjectId,
         }));
         jobCreation.subject = subjects;
-      
+
         const classes = jobCreation.class?.map((classId) => ({
-          classId: jobCreation?._id ? classId.value : classId,
+            classId: jobCreation?._id ? classId.value : classId,
         }));
         jobCreation.class = classes;
-      
+
         try {
-          if (jobCreation?._id) {
-            const update = await put(JOB_REQUEST_END_POINT.update(jobCreation?._id), jobCreation);
-            if (update.status === 'SUCCESS') {
-              notify('success', update.message);
-              router.push('/job_creation');
+            if (jobCreation?._id) {
+                const update = await put(JOB_REQUEST_END_POINT.update(jobCreation?._id), jobCreation);
+                if (update.status === 'SUCCESS') {
+                    notify('success', update.message);
+                    router.push('/job_creation');
+                } else {
+                    notify('error', update.errorMessage);
+                    setLoading(false);
+                }
             } else {
-              notify('error', update.errorMessage);
-              setLoading(false);
+                const response = await post(JOB_REQUEST_END_POINT.create(), jobCreation);
+                if (response.status === 'SUCCESS') {
+                    notify('success', response.message);
+                    router.push('/job_creation');
+                } else {
+                    notify('error', response.errorMessage);
+                    setLoading(false);
+                }
             }
-          } else {
-            const response = await post(JOB_REQUEST_END_POINT.create(), jobCreation);
-            if (response.status === 'SUCCESS') {
-              notify('success', response.message);
-              router.push('/job_creation');
-            } else {
-              notify('error', response.errorMessage);
-              setLoading(false);
-            }
-          }
-          setLoading(false);
+            setLoading(false);
         } catch (error) {
-          notify('error', error.message);
-          setLoading(false);
+            notify('error', error.message);
+            setLoading(false);
         }
-      };
-      
+    };
+
 
 
     return (
@@ -518,7 +515,7 @@ const JobCreationForm = () => {
                                                 id="phone"
                                                 placeholder="Enter the phone number"
                                                 onChange={handleChange}
-                                                defaultValue={jobCreation?.full_name}
+                                                defaultValue={jobCreation?.phone}
                                             />
                                         </div>
 
@@ -535,7 +532,7 @@ const JobCreationForm = () => {
                                                 id="tuitionType"
                                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                 onChange={handleChange}
-                                                defaultValue={jobCreation?.full_name}
+                                                value={jobCreation?.tuitionType}
                                             >
                                                 <option selected="">Select a option</option>
                                                 <option value={"Home Tutoring"}> Home Tutoring </option>
@@ -567,6 +564,7 @@ const JobCreationForm = () => {
                                                     name='category'
                                                     id="status"
                                                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                                    value={jobCreation?.category}
                                                 >
                                                     <option value="" disabled>
                                                         Choose a Category
@@ -595,6 +593,7 @@ const JobCreationForm = () => {
                                                 name="noOfStudent"
                                                 id="noOfStudent"
                                                 placeholder="Enter the number of students"
+                                                defaultValue={jobCreation?.noOfStudent}
                                                 onChange={(e) => {
                                                     handleChange(e);
                                                     handleStudentNumberChange(e);
@@ -616,7 +615,7 @@ const JobCreationForm = () => {
                                                 labelKey="value"
                                                 valueKey="id"
                                                 onChange={(selectedOptions) => handleChange({ target: { name: 'class' } }, selectedOptions)}
-                                                selectedValues={jobCreation?.class}
+                                                selectedValues={jobCreation.class || []}  // Use jobCreation.class directly
                                             />
                                         </div>
 
@@ -632,7 +631,7 @@ const JobCreationForm = () => {
                                                 labelKey="value"
                                                 valueKey="id"
                                                 onChange={(selectedOptions) => handleChange({ target: { name: 'subject' } }, selectedOptions)}
-                                                selectedValues={jobCreation?.subject}
+                                                selectedValues={jobCreation?.subject || []} // Provide an empty array as a fallback
                                             />
                                         </div>
                                     </div>
@@ -654,6 +653,7 @@ const JobCreationForm = () => {
                                                     name='curriculum'
                                                     id="status"
                                                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                                                    value={jobCreation?.curriculum}
 
                                                 >
                                                     <option selected="">Select a option</option>
@@ -686,6 +686,8 @@ const JobCreationForm = () => {
                                                         handleChange(e);
                                                         handleLocation(e.target.value);
                                                     }}
+                                                    value={jobCreation?.city}
+
                                                 >
                                                     {city && (
                                                         <>
@@ -721,6 +723,8 @@ const JobCreationForm = () => {
                                                         handleChange(e);
                                                         // handleLocation(e.target.value);
                                                     }}
+                                                    value={jobCreation?.location}
+
                                                 >
                                                     {location && (
                                                         <>
@@ -788,6 +792,7 @@ const JobCreationForm = () => {
                                                 rows={3}
                                                 placeholder="Write your address here"
                                                 onChange={handleChange}
+                                                defaultValue={jobCreation?.address}
 
                                             ></textarea>
                                         </div>
@@ -832,6 +837,7 @@ const JobCreationForm = () => {
                                                         value="Male"
                                                         onChange={handleChange}
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
+                                                        defaultChecked={jobCreation?.studentGender === "Male"}
 
                                                     />
                                                     <span className="ml-2">Male</span>
@@ -844,6 +850,8 @@ const JobCreationForm = () => {
                                                         value="Female"
                                                         onChange={handleChange}
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
+                                                        defaultChecked={jobCreation?.studentGender === "Female"}
+
                                                     />
                                                     <span className="ml-2">Female</span>
                                                 </label>
@@ -855,6 +863,8 @@ const JobCreationForm = () => {
                                                             value="Both"
                                                             onChange={handleChange}
                                                             className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
+                                                            defaultChecked={jobCreation?.studentGender === "Both"}
+
                                                         />
                                                         <span className="ml-2">Both</span>
                                                     </label>}
@@ -877,6 +887,7 @@ const JobCreationForm = () => {
                                                         value="Male"
                                                         onChange={handleChange}
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
+                                                        defaultChecked={jobCreation?.teacherGender === "Male"}
 
                                                     />
                                                     <span className="ml-2">Male</span>
@@ -889,6 +900,7 @@ const JobCreationForm = () => {
                                                         value="Female"
                                                         onChange={handleChange}
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
+                                                        defaultChecked={jobCreation?.teacherGender === "Female"}
                                                     />
                                                     <span className="ml-2">Female</span>
                                                 </label>
@@ -900,6 +912,8 @@ const JobCreationForm = () => {
                                                         value="Any"
                                                         onChange={handleChange}
                                                         className="form-radio h-5 w-5 text-primary border-primary focus:ring-0 focus:outline-none"
+                                                        defaultChecked={jobCreation?.teacherGender === "Any"}
+
                                                     />
                                                     <span className="ml-2">Any </span>
                                                 </label>
@@ -923,6 +937,8 @@ const JobCreationForm = () => {
                                                     id="countries"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                     onChange={handleChange}
+                                                    value={jobCreation?.daysPerWeek}
+
                                                 >
                                                     <option value>Choose a Id</option>
                                                     <option value={1}>1 Day Per Week</option>
@@ -949,6 +965,7 @@ const JobCreationForm = () => {
                                                 id="phoneNumber"
                                                 placeholder="+990 3343 7865"
                                                 onChange={handleChange}
+                                                defaultValue={jobCreation?.preferenceInstitute}
 
                                             />
                                         </div>
@@ -972,6 +989,8 @@ const JobCreationForm = () => {
                                                 id="dob"
                                                 placeholder="+990 3343 7865"
                                                 onChange={handleChange}
+                                                defaultValue={jobCreation?.hireDate}
+
                                             />
                                         </div>
 
@@ -989,6 +1008,8 @@ const JobCreationForm = () => {
                                                 id="tutoringTime"
                                                 placeholder="HH:mm"
                                                 onChange={handleChange}
+                                                defaultValue={jobCreation?.tutoringTime}
+
                                             />
                                         </div>
                                     </div>
@@ -1008,6 +1029,8 @@ const JobCreationForm = () => {
                                                     id="countries"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                     onChange={handleChange}
+                                                    value={jobCreation?.salaryType}
+
                                                 >
                                                     <option value>Choose a Id</option>
                                                     <option value="Fixed">Fixed</option>
@@ -1030,6 +1053,8 @@ const JobCreationForm = () => {
                                                 id="salary"
                                                 placeholder="Enter the phone number"
                                                 onChange={handleChange}
+                                                defaultValue={jobCreation?.salary}
+
                                             />
                                         </div>
 
@@ -1051,9 +1076,11 @@ const JobCreationForm = () => {
 
                                                 <select
                                                     name="status"
-                                                    id="countries"
+                                                    id="status"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                     onChange={handleChange}
+                                                    defaultValue={jobCreation?.status}
+
                                                 >
                                                     <option value>Status</option>
                                                     <option value={true}>Active</option>
@@ -1086,6 +1113,8 @@ const JobCreationForm = () => {
                                                     id="isApproval"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                     onChange={handleChange}
+                                                    defaultValue={jobCreation?.isApproval}
+
                                                 >
                                                     <option value>Select..</option>
                                                     <option value={true}>Active</option>
@@ -1144,6 +1173,8 @@ const JobCreationForm = () => {
                                                     rows={3}
                                                     placeholder="Write your bio here"
                                                     onChange={handleChange}
+                                                // defaultValue={jobCreation?.address}
+
 
                                                 ></textarea>
                                             </div>
@@ -1159,14 +1190,18 @@ const JobCreationForm = () => {
                                             <div className="relative">
 
                                                 <select
-                                                    name="isApproval"
-                                                    id="isApproval"
+                                                    name="jobStatus"
+                                                    id="jobStatus"
                                                     className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                     onChange={handleChange}
+                                                    value={jobCreation?.jobStatus}
+
                                                 >
                                                     <option value>Select..</option>
-                                                    <option value={true}>Active</option>
-                                                    <option value={false}>Inactive</option>
+                                                    <option value="ACTIVE">Active</option>
+                                                    <option value="PENDING">PENDING</option>
+                                                    <option value="CANCELED">CANCELED</option>
+                                                    <option value="CONFIRMED">CONFIRMED</option>
                                                 </select>
                                             </div>
                                         </div>}
