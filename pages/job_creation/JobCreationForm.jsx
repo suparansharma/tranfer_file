@@ -49,11 +49,11 @@ const JobCreationForm = () => {
         phone: '',
         isApproval: '',
         tuitionType: '',
-        curriculum: '',
+        // curriculum: '',
         hireDate: '',
         tutoringTime: '',
         status: '',
-        jobStatus: '',
+        // jobStatus: 'PENDING',
 
     });
 
@@ -92,7 +92,31 @@ const JobCreationForm = () => {
                 console.log("Parsed data:", parsedData);
 
                 // Set the editData state with the parsed data
-                setEditData(parsedData);
+                // setEditData(parsedData);
+                setJobCreation({    
+                    guardian: parsedData?.guardian?._id,
+                    category: parsedData?.category?._id,
+                    noOfStudent: parsedData?.noOfStudent,
+                    subject: parsedData?.subject?.map((t) => t.subjectId)?.map((t) => t?._id),
+                    class: parsedData?.class?.map((t) => t.classId)?.map((t) => t?._id),
+                    studentGender: parsedData?.studentGender,
+                    teacherGender: parsedData?.teacherGender,
+                    city:parsedData.city?._id,
+                    location: parsedData?.location?._id,
+                    address: parsedData?.address,
+                    daysPerWeek: parsedData?.daysPerWeek,
+                    preferenceInstitute: parsedData?.preferenceInstitute,
+                    salaryType: parsedData?.salaryType,
+                    salary: parsedData?.salary,
+                    phone: parsedData?.phone,
+                    isApproval: parsedData?.isApproval,
+                    tuitionType: parsedData.tuitionType,
+                    hireDate: parsedData.hireDate,
+                    tutoringTime: parsedData.category,
+                    status: parsedData.status,
+                });
+
+
             } catch (error) {
                 console.error("Error parsing JSON data:", error);
             }
@@ -314,37 +338,45 @@ const JobCreationForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        console.log("submited data is", jobCreation);
-
-
+        console.log("submitted data is", jobCreation);
+      
+        const subjects = jobCreation.subject?.map((subjectId) => ({
+          subjectId: subjectId,
+        }));
+        jobCreation.subject = subjects;
+      
+        const classes = jobCreation.class?.map((classId) => ({
+          classId: jobCreation?._id ? classId.value : classId,
+        }));
+        jobCreation.class = classes;
+      
         try {
-            if (editData?._id) {
-              const update = await put(JOB_REQUEST_END_POINT.update(editData?._id), jobCreation);
-              if (update.status === 'SUCCESS') {
-                notify('success', update.message);
-                router.push('/job_creation')
-              } else {
-                notify('error', update.errorMessage);
-                setLoading(false);
-              }
+          if (jobCreation?._id) {
+            const update = await put(JOB_REQUEST_END_POINT.update(jobCreation?._id), jobCreation);
+            if (update.status === 'SUCCESS') {
+              notify('success', update.message);
+              router.push('/job_creation');
             } else {
-              const response = await post(JOB_REQUEST_END_POINT.create(), jobCreation);
-              if (response.status === 'SUCCESS') {
-                notify('success', response.message);
-                router.push('/job_creation')
-
-              } else {
-                notify('error', response.errorMessage);
-                setLoading(false);
-              }
+              notify('error', update.errorMessage);
+              setLoading(false);
             }
-            setLoading(false);
-          } catch (error) {
-            notify('error', error.message);
-            setLoading(false);
+          } else {
+            const response = await post(JOB_REQUEST_END_POINT.create(), jobCreation);
+            if (response.status === 'SUCCESS') {
+              notify('success', response.message);
+              router.push('/job_creation');
+            } else {
+              notify('error', response.errorMessage);
+              setLoading(false);
+            }
           }
-
-    }
+          setLoading(false);
+        } catch (error) {
+          notify('error', error.message);
+          setLoading(false);
+        }
+      };
+      
 
 
     return (
@@ -417,8 +449,10 @@ const JobCreationForm = () => {
                                                         type="text"
                                                         name="full_name"
                                                         id="full_name"
-                                                        placeholder="Devid Jhon"
+                                                        placeholder="Enter the name"
+                                                        defaultValue={jobCreation?.full_name}
 
+                                                        onChange={handleChange}
                                                     />
                                                 </div>
                                             </div>
@@ -484,6 +518,7 @@ const JobCreationForm = () => {
                                                 id="phone"
                                                 placeholder="Enter the phone number"
                                                 onChange={handleChange}
+                                                defaultValue={jobCreation?.full_name}
                                             />
                                         </div>
 
@@ -500,6 +535,7 @@ const JobCreationForm = () => {
                                                 id="tuitionType"
                                                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500  dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                                                 onChange={handleChange}
+                                                defaultValue={jobCreation?.full_name}
                                             >
                                                 <option selected="">Select a option</option>
                                                 <option value={"Home Tutoring"}> Home Tutoring </option>
